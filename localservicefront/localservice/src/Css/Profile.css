@@ -1,0 +1,169 @@
+/* =========================================
+   PROFILE EDIT
+========================================= */
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.profile-header-info {
+  flex: 1;
+}
+
+.profile-edit-btn {
+  border: none;
+  background: #111;
+  color: white;
+
+  padding: 10px 17px;
+
+  border-radius: 6px;
+
+  font-family: inherit;
+  font-size: 13px;
+
+  cursor: pointer;
+
+  transition: 0.2s ease;
+}
+
+.profile-edit-btn:hover {
+  background: #2a2a2a;
+}
+
+
+/* =========================================
+   VIEW / EDIT FIELDS
+========================================= */
+
+.profile-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.profile-info-item span {
+  font-size: 11px;
+
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+
+  color: #888;
+}
+
+.profile-info-item strong {
+  font-size: 14px;
+  font-weight: 500;
+
+  color: #222;
+}
+
+
+/* =========================================
+   EDIT INPUTS
+========================================= */
+
+.profile-info-item input {
+  width: 100%;
+
+  box-sizing: border-box;
+
+  padding: 11px 12px;
+
+  border: 1px solid #d7d7d7;
+  border-radius: 6px;
+
+  background: white;
+
+  color: #222;
+
+  font-family: inherit;
+  font-size: 14px;
+
+  outline: none;
+}
+
+.profile-info-item input:focus {
+  border-color: #111;
+}
+
+
+/* =========================================
+   ACTION BUTTONS
+========================================= */
+
+.profile-edit-actions {
+  grid-column: 1 / -1;
+
+  display: flex;
+
+  justify-content: flex-end;
+
+  gap: 10px;
+
+  margin-top: 10px;
+
+  padding-top: 20px;
+
+  border-top: 1px solid #eeeeee;
+}
+
+.profile-cancel-btn {
+  padding: 11px 17px;
+
+  border: 1px solid #d6d6d6;
+  border-radius: 6px;
+
+  background: white;
+  color: #444;
+
+  font-family: inherit;
+  font-size: 13px;
+
+  cursor: pointer;
+}
+
+.profile-cancel-btn:hover {
+  background: #f5f5f5;
+}
+
+.profile-save-btn {
+  padding: 11px 17px;
+
+  border: none;
+  border-radius: 6px;
+
+  background: #111;
+  color: white;
+
+  font-family: inherit;
+  font-size: 13px;
+
+  cursor: pointer;
+}
+
+.profile-save-btn:hover {
+  background: #292929;
+}
+
+.profile-save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+
+/* =========================================
+   LOADING
+========================================= */
+
+.profile-loading {
+  padding: 50px;
+
+  text-align: center;
+
+  color: #777;
+
+  font-size: 14px;
+}
