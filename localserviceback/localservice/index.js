@@ -22,8 +22,10 @@ app.use(express.json());
 //   .catch((error) => {
 //     console.log(error);
 //   });
-  mongoose.connect("mongodb+srv://hiba123:hiba123@cluster0.xhmorhj.mongodb.net/samplecrud").then(() => console.log("mongodb connected")).catch((err) => console.log(err))
 
+  mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("mongodb connected"))
+  .catch((err) => console.log(err));
 
   // const jwt = require("jsonwebtoken");
 
