@@ -10,7 +10,7 @@ const servicesPerPage = 3;
 
   const getUsers = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/users");
+      const response = await axios.get("https://servitrust-baxkend.onrender.com/users");
       setUsers(response.data);
     } catch (error) {
       console.log("GET USERS ERROR:", error);
@@ -29,7 +29,7 @@ const servicesPerPage = 3;
     if (!confirmDelete) return;
 
     try {
-      await axios.delete(`http://localhost:5000/users/${id}`);
+      await axios.delete(`https://servitrust-baxkend.onrender.com/users/${id}`);
 
       setUsers(users.filter((user) => user._id !== id));
 

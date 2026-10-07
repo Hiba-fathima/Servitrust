@@ -20,7 +20,7 @@ const Providers = () => {
   const getProviders = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5000/providers"
+        "https://servitrust-baxkend.onrender.com/providers"
       );
 
       setProviders(response.data);
@@ -33,7 +33,7 @@ const Providers = () => {
   const getServices = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5000/services"
+        "https://servitrust-baxkend.onrender.com/services"
       );
 
       setServices(response.data);
@@ -76,7 +76,7 @@ const Providers = () => {
       };
 
       const response = await axios.post(
-        "http://localhost:5000/admin/providers",
+        "https://servitrust-baxkend.onrender.com/admin/providers",
         data
       );
 

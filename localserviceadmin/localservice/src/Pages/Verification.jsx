@@ -7,7 +7,7 @@ const Verification = () => {
   const getPendingProviders = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5000/providers"
+        "https://servitrust-baxkend.onrender.com/providers"
       );
 
       const pendingProviders = response.data.filter(
@@ -28,7 +28,7 @@ const Verification = () => {
   const updateVerification = async (id, status) => {
     try {
       await axios.put(
-        `http://localhost:5000/providers/${id}/verification`,
+        `https://servitrust-baxkend.onrender.com/providers/${id}/verification`,
         {
           verificationStatus: status
         }

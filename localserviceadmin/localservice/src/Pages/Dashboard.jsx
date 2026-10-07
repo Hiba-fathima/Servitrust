@@ -12,12 +12,12 @@ const Dashboard = () => {
   const getDashboardData = async () => {
     try {
       const results = await Promise.allSettled([
-        axios.get("http://localhost:5000/users"),
-        axios.get("http://localhost:5000/providers"),
-        axios.get("http://localhost:5000/services"),
-        axios.get("http://localhost:5000/service-requests"),
-        axios.get("http://localhost:5000/complaints"),
-        axios.get("http://localhost:5000/reviews"),
+        axios.get("https://servitrust-baxkend.onrender.com/users"),
+        axios.get("https://servitrust-baxkend.onrender.com/providers"),
+        axios.get("https://servitrust-baxkend.onrender.com/services"),
+        axios.get("https://servitrust-baxkend.onrender.com/service-requests"),
+        axios.get("https://servitrust-baxkend.onrender.com/complaints"),
+        axios.get("https://servitrust-baxkend.onrender.com/reviews"),
       ]);
 
       if (results[0].status === "fulfilled") {

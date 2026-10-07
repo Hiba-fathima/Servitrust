@@ -33,7 +33,7 @@ function Services() {
   const getServices = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5000/services"
+        "https://servitrust-baxkend.onrender.com/services"
       );
 
       setServices(response.data);
@@ -148,14 +148,14 @@ function Services() {
 
       if (editId) {
         await axios.put(
-          `http://localhost:5000/services/${editId}`,
+          `https://servitrust-baxkend.onrender.com/services/${editId}`,
           data
         );
 
         alert("Service updated successfully");
       } else {
         await axios.post(
-          "http://localhost:5000/services",
+          "https://servitrust-baxkend.onrender.com/services",
           data
         );
 
@@ -202,7 +202,7 @@ function Services() {
   const deleteService = async (id) => {
     try {
       const response = await axios.delete(
-        `http://localhost:5000/services/${id}`
+        `https://servitrust-baxkend.onrender.com/services/${id}`
       );
 
       alert(response.data.message);
