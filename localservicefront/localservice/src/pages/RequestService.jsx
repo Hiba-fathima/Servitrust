@@ -19,7 +19,7 @@ const RequestService = () => {
   const getProvider = async () => {
     try {
       const response = await axios.get(
-        `http://servitrust-baxkend.onrender.com/providers/${providerId}`
+        `https://servitrust-baxkend.onrender.com/providers/${providerId}`
       );
 
       setProvider(response.data);
@@ -73,7 +73,7 @@ providerName: provider.name,
     console.log("FINAL REQUEST DATA:", data);
 
     const response = await axios.post(
-      "http://servitrust-baxkend.onrender.com/service-requests",
+      "https://servitrust-baxkend.onrender.com/service-requests",
       data
     );
 

@@ -122,7 +122,7 @@ function Profile() {
       setSaving(true);
 
       const response = await axios.put(
-        "http://servitrust-baxkend.onrender.com/profile",
+        "https://servitrust-baxkend.onrender.com/profile",
         {
           name: user.name,
           email: user.email,

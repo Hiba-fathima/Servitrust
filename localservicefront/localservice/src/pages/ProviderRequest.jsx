@@ -77,7 +77,7 @@ const ProviderRequests = () => {
       setUpdatingId(requestId);
 
       await axios.put(
-        `http://servitrust-baxkend.onrender.com/service-requests/${requestId}/status`,
+        `https://servitrust-baxkend.onrender.com/service-requests/${requestId}/status`,
         {
           status: status,
           providerId: provider._id
