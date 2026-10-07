@@ -685,30 +685,33 @@ app.post("/providers", async (req, res) => {
 
 
 app.get("/providers", async (req, res) => {
-
   try {
-
     const providers = await Provider.find();
 
-    res.json(providers);
+    const providersWithUser = await Promise.all(
+      providers.map(async (provider) => {
+        const user = await User.findById(provider.userId)
+          .select("name email phone");
 
-  } catch (error) {
-
-    console.log(
-      "GET PROVIDERS ERROR:",
-      error
+        return {
+          ...provider.toObject(),
+          name: user?.name || "",
+          email: user?.email || "",
+          phone: user?.phone || ""
+        };
+      })
     );
 
+    res.json(providersWithUser);
+
+  } catch (error) {
+    console.log("GET PROVIDERS ERROR:", error);
+
     res.status(500).json({
-
       message: "Failed to get providers",
-
       error: error.message
-
     });
-
   }
-
 });
 
 
@@ -859,7 +862,6 @@ app.put("/providers/:id/verification", async (req, res) => {
 });
 
 
-
 app.get(
   "/providers/service/:serviceName",
   async (req, res) => {
@@ -871,7 +873,6 @@ app.get(
           req.params.serviceName
         );
 
-
       const providers =
         await Provider.find({
 
@@ -882,9 +883,7 @@ app.get(
 
         });
 
-
       res.json(providers);
-
 
     } catch (error) {
 
@@ -892,7 +891,6 @@ app.get(
         "GET VERIFIED PROVIDERS ERROR:",
         error
       );
-
 
       res.status(500).json({
 
@@ -908,6 +906,9 @@ app.get(
 
   }
 );
+
+
+
 
 
 
@@ -1091,6 +1092,9 @@ app.post("/admin/providers", async (req, res) => {
 
 
     await user.save();
+    console.log("USER CREATED:", user._id);
+console.log("USER NAME:", user.name);
+console.log("USER EMAIL:", user.email);
 
 
     const provider = new Provider({
@@ -1125,7 +1129,7 @@ app.post("/admin/providers", async (req, res) => {
 
 
     await provider.save();
-
+console.log("PROVIDER USER ID:", provider.userId);
 
     res.status(201).json({
 
