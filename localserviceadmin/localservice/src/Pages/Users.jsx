@@ -6,7 +6,10 @@ const Users = () => {
   const [search, setSearch] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
-const servicesPerPage = 3;
+const servicesPerPage = 10;
+
+
+const [roleFilter, setRoleFilter] = useState("all");
 
   const getUsers = async () => {
     try {
@@ -40,15 +43,21 @@ const servicesPerPage = 3;
     }
   };
 
-  const filteredUsers = users.filter((user) => {
-    const searchText = search.toLowerCase();
 
-    return (
-      user.name?.toLowerCase().includes(searchText) ||
-      user.email?.toLowerCase().includes(searchText) ||
-      user.phone?.toLowerCase().includes(searchText)
-    );
-  });
+const filteredUsers = users.filter((user) => {
+  const searchText = search.toLowerCase();
+
+  const matchesSearch =
+    user.name?.toLowerCase().includes(searchText) ||
+    user.email?.toLowerCase().includes(searchText) ||
+    user.phone?.toLowerCase().includes(searchText);
+
+  const matchesRole =
+    roleFilter === "all" ||
+    user.role?.toLowerCase() === roleFilter;
+
+  return matchesSearch && matchesRole;
+});
 
 
   const indexOfLastService = currentPage * servicesPerPage;
@@ -96,16 +105,31 @@ const goToPage = (pageNumber) => {
         </div>
       </div>
 
-      <div className="users-toolbar">
+     <div className="users-toolbar">
 
-        <input
-          type="text"
-          placeholder="Search by name, email or phone..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+  <input
+    type="text"
+    placeholder="Search by name, email or phone..."
+    value={search}
+    onChange={(e) => {
+      setSearch(e.target.value);
+      setCurrentPage(1);
+    }}
+  />
 
-      </div>
+  <select
+    value={roleFilter}
+    onChange={(e) => {
+      setRoleFilter(e.target.value);
+      setCurrentPage(1);
+    }}
+  >
+    <option value="all">All Users</option>
+    <option value="customer">Customers</option>
+    <option value="provider">Providers</option>
+  </select>
+
+</div>
 
       <div className="users-table-container">
 

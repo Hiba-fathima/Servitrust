@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import "../Css/Provider.css"
 
 const Providers = () => {
   const [providers, setProviders] = useState([]);
@@ -17,17 +18,26 @@ const Providers = () => {
   const [description, setDescription] = useState("");
   const [availability, setAvailability] = useState("Available");
 
-  const getProviders = async () => {
-    try {
-      const response = await axios.get(
-        "https://servitrust-baxkend.onrender.com/providers"
-      );
+const [currentPage, setCurrentPage] = useState(1);
+const providersPerPage = 4;
 
-      setProviders(response.data);
-    } catch (error) {
-      console.log("GET PROVIDERS ERROR:", error);
-    }
-  };
+const [search, setSearch] = useState("");
+
+  const getProviders = async () => {
+  try {
+    const response = await axios.get(
+      "https://servitrust-baxkend.onrender.com/providers"
+    );
+
+    console.log("PROVIDERS API RESPONSE:", response.data);
+
+    setProviders(response.data);
+    setCurrentPage(1);
+
+  } catch (error) {
+    console.log("GET PROVIDERS ERROR:", error);
+  }
+};
 
   // NEW: GET SERVICES FROM ADMIN SERVICES
   const getServices = async () => {
@@ -59,46 +69,71 @@ const Providers = () => {
     setAvailability("Available");
   };
 
-  const handleAddProvider = async (e) => {
-    e.preventDefault();
+const handleAddProvider = async (e) => {
+  e.preventDefault();
 
-    try {
-      const data = {
-        name,
-        email,
-        phone,
-        password,
-        service,
-        location,
-        experience,
-        description,
-        availability
-      };
+  try {
+    const data = {
+      name,
+      email,
+      phone,
+      password,
+      category: ["General"],
+      services: [service],
+      location,
+      experience,
+      description,
+      availability
+    };
 
-      const response = await axios.post(
-        "https://servitrust-baxkend.onrender.com/admin/providers",
-        data
-      );
+    const response = await axios.post(
+      "http://localhost:5000/admin/providers",
+      data
+    );
 
-      alert(
-        `Provider created successfully!\n\nEmail: ${email}\nPassword: ${password}`
-      );
+    alert(
+      `Provider created successfully!\n\nEmail: ${email}\nPassword: ${password}`
+    );
 
-      getProviders();
+    getProviders();
+    resetForm();
+    setShowForm(false);
 
-      resetForm();
-      setShowForm(false);
+  } catch (error) {
+    console.log("ADD PROVIDER ERROR:", error);
 
-    } catch (error) {
-      console.log("ADD PROVIDER ERROR:", error);
+    alert(
+      error.response?.data?.message ||
+      "Failed to create provider"
+    );
+  }
+};
 
-      alert(
-        error.response?.data?.message ||
-        "Failed to create provider"
-      );
-    }
-  };
 
+ const filteredProviders = providers.filter((provider) => {
+  const searchText = search.toLowerCase();
+
+  return (
+    provider.name?.toLowerCase().includes(searchText) ||
+    provider.location?.toLowerCase().includes(searchText)
+  );
+});
+
+  const totalPages = Math.ceil(
+  filteredProviders.length / providersPerPage
+);
+
+const startIndex =
+  (currentPage - 1) * providersPerPage;
+
+const currentProviders =
+  filteredProviders.slice(
+    startIndex,
+    startIndex + providersPerPage
+  );
+
+
+ 
   return (
     <div className="providers-page">
 
@@ -329,8 +364,20 @@ const Providers = () => {
 
 
       {/* PROVIDER TABLE */}
+      <div className="providers-search">
+  <input
+    type="text"
+    placeholder="Search by provider name or location..."
+    value={search}
+    onChange={(e) => {
+      setSearch(e.target.value);
+      setCurrentPage(1);
+    }}
+  />
+</div>
 
       <div className="providers-table-container">
+        
 
         <table className="providers-table">
 
@@ -338,9 +385,8 @@ const Providers = () => {
             <tr>
               <th>#</th>
               <th>Provider</th>
-              <th>Service</th>
+              <th>Category</th>
               <th>Location</th>
-              <th>Experience</th>
               <th>Availability</th>
               <th>Verification</th>
               <th>Reliability</th>
@@ -349,13 +395,13 @@ const Providers = () => {
 
           <tbody>
 
-            {providers.length > 0 ? (
+            {filteredProviders.length > 0 ? (
 
-              providers.map((provider, index) => (
+              currentProviders.map((provider, index) => (
 
                 <tr key={provider._id}>
 
-                  <td>{index + 1}</td>
+                  <td>{startIndex  + index + 1}</td>
 
                   <td>
                     <div className="provider-name-cell">
@@ -379,11 +425,13 @@ const Providers = () => {
                     </div>
                   </td>
 
-                  <td>{provider.service}</td>
-
+<td>
+  {Array.isArray(provider.category)
+    ? provider.category.join(", ")
+    : provider.category}
+</td>
                   <td>{provider.location}</td>
 
-                  <td>{provider.experience}</td>
 
                   <td>
                     <span className="provider-status">
@@ -392,16 +440,20 @@ const Providers = () => {
                   </td>
 
                   <td>
-                    <span
-                      className={
-                        provider.verificationStatus === "Verified"
-                          ? "verified-badge"
-                          : "pending-badge"
-                      }
-                    >
-                      {provider.verificationStatus}
-                    </span>
-                  </td>
+  <span
+    className={`verification-badge ${
+      provider.verificationStatus === "Verified"
+        ? "verification-verified"
+        : provider.verificationStatus === "Pending"
+        ? "verification-pending"
+        : provider.verificationStatus === "Rejected"
+        ? "verification-rejected"
+        : ""
+    }`}
+  >
+    {provider.verificationStatus}
+  </span>
+</td>
 
                   <td>
                     {provider.reliabilityScore || 0}%
@@ -427,10 +479,65 @@ const Providers = () => {
           </tbody>
 
         </table>
+        
+{providers.length > 0 && totalPages > 1 && (
+  <div className="providers-pagination">
 
-      </div>
+    <button
+      type="button"
+      disabled={currentPage === 1}
+      onClick={() =>
+        setCurrentPage(currentPage - 1)
+      }
+    >
+      ← Previous
+    </button>
+
+    <div className="pagination-pages">
+
+      {Array.from(
+        { length: totalPages },
+        (_, index) => index + 1
+      ).map((page) => (
+
+        <button
+          type="button"
+          key={page}
+          className={
+            currentPage === page
+              ? "active"
+              : ""
+          }
+          onClick={() =>
+            setCurrentPage(page)
+          }
+        >
+          {page}
+        </button>
+
+      ))}
 
     </div>
+
+    <button
+      type="button"
+      disabled={currentPage === totalPages}
+      onClick={() =>
+        setCurrentPage(currentPage + 1)
+      }
+    >
+      Next →
+    </button>
+
+  </div>
+)}
+
+        
+      </div>
+      
+
+    </div>
+    
   );
 };
 
