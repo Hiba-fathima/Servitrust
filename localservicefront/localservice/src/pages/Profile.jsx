@@ -32,7 +32,7 @@ function Profile() {
     try {
 
       const response = await axios.get(
-        "http://localhost:5000/profile",
+        "https://servitrust-baxkend.onrender.com/profile",
         {
           headers: {
             Authorization: `Bearer ${token}`
@@ -122,7 +122,7 @@ function Profile() {
       setSaving(true);
 
       const response = await axios.put(
-        "http://localhost:5000/profile",
+        "http://servitrust-baxkend.onrender.com/profile",
         {
           name: user.name,
           email: user.email,

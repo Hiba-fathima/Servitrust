@@ -21,7 +21,7 @@ const ProviderRequests = () => {
 
       // Get provider list
       const providerResponse = await axios.get(
-        "http://localhost:5000/providers"
+        "https://servitrust-baxkend.onrender.com/providers"
       );
 
       const myProvider = providerResponse.data.find(
@@ -38,7 +38,7 @@ const ProviderRequests = () => {
 
       // Get ONLY this provider's requests
       const requestResponse = await axios.get(
-        `http://localhost:5000/service-requests/provider/${myProvider._id}`
+        `https://servitrust-baxkend.onrender.com/service-requests/provider/${myProvider._id}`
       );
 
       setRequests(requestResponse.data);
@@ -77,7 +77,7 @@ const ProviderRequests = () => {
       setUpdatingId(requestId);
 
       await axios.put(
-        `http://localhost:5000/service-requests/${requestId}/status`,
+        `http://servitrust-baxkend.onrender.com/service-requests/${requestId}/status`,
         {
           status: status,
           providerId: provider._id

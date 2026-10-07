@@ -12,7 +12,7 @@ const ProviderDetails = () => {
   const getProvider = async () => {
     try {
       const response = await axios.get(
-        `http://localhost:5000/providers/${id}`
+        `https://servitrust-baxkend.onrender.com/providers/${id}`
       );
 
       setProvider(response.data);

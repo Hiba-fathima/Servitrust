@@ -14,7 +14,7 @@ const TotalProviders = () => {
     try {
 
       const response = await axios.get(
-        "http://localhost:5000/providers"
+        "https://servitrust-baxkend.onrender.com/providers"
       );
 
       // Only show verified providers

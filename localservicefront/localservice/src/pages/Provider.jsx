@@ -56,7 +56,7 @@ const ProviderProfile = () => {
 
         const servicesResponse =
           await axios.get(
-            "http://localhost:5000/services"
+            "https://servitrust-baxkend.onrender.com/services"
           );
 
         setServicesList(
@@ -68,7 +68,7 @@ const ProviderProfile = () => {
 
           const providerResponse =
             await axios.get(
-              `http://localhost:5000/providers/user/${userId}`
+              `https://servitrust-baxkend.onrender.com/providers/user/${userId}`
             );
 
           const providerData =
@@ -457,7 +457,7 @@ setFormData({
 
           const response =
             await axios.post(
-              "http://localhost:5000/providers",
+              "https://servitrust-baxkend.onrender.com/providers",
               {
                 ...formData,
                 userId
@@ -474,7 +474,7 @@ setFormData({
 
           const profileResponse =
             await axios.get(
-              `http://localhost:5000/providers/user/${userId}`
+              `https://servitrust-baxkend.onrender.com/providers/user/${userId}`
             );
 
 
@@ -535,7 +535,7 @@ setFormData({
 
         const response =
           await axios.put(
-            `http://localhost:5000/providers/${provider._id}`,
+            `https://servitrust-baxkend.onrender.com/providers/${provider._id}`,
             formData
           );
 

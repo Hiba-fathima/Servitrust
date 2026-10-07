@@ -12,7 +12,7 @@ const Login = () => {
   try {
 
     const response = await axios.post(
-      "http://localhost:5000/login",
+      "https://servitrust-baxkend.onrender.com/login",
       {
         email: e.target.email.value,
         password: e.target.password.value
@@ -67,7 +67,7 @@ const Login = () => {
 
         const providerResponse =
           await axios.get(
-            `http://localhost:5000/providers/user/${response.data.user.id}`
+            `https://servitrust-baxkend.onrender.com/providers/user/${response.data.user.id}`
           );
 
         console.log(

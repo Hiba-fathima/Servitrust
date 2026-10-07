@@ -11,7 +11,7 @@ function Register() {
     try {
 
       const response = await axios.post(
-        "http://localhost:5000/register",
+        "https://servitrust-baxkend.onrender.com/register",
         {
           name: e.target.name.value,
           email: e.target.email.value,

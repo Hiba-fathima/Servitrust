@@ -16,7 +16,7 @@ const Services = () => {
   const getServices = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5000/services"
+        "https://servitrust-baxkend.onrender.com/services"
       );
 
       setServices(response.data);

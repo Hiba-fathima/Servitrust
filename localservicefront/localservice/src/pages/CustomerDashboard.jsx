@@ -18,7 +18,7 @@ const CustomerDashboard = () => {
       setLoading(true);
 
       const response = await axios.get(
-        `http://localhost:5000/service-requests/customer/${userId}`
+        ` https://servitrust-baxkend.onrender.com/service-requests/customer/${userId}`
       );
 
       setRequests(response.data);

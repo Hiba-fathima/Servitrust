@@ -13,14 +13,14 @@ const ServiceProviders = () => {
     try {
       // Get service
       const serviceResponse = await axios.get(
-        `http://localhost:5000/services/${id}`
+        `https://servitrust-baxkend.onrender.com/services/${id}`
       );
 
       setService(serviceResponse.data);
 
       // Get verified providers for this service
       const providerResponse = await axios.get(
-        `http://localhost:5000/providers/service/${encodeURIComponent(
+        `https://servitrust-baxkend.onrender.com/providers/service/${encodeURIComponent(
           serviceResponse.data.name
         )}`
       );
