@@ -1,0 +1,309 @@
+/* ================================
+   CATEGORIES PAGE
+================================ */
+
+.categories-page {
+  padding: 30px 35px 50px;
+  background: #f8f8f8;
+  min-height: calc(100vh - 70px);
+  box-sizing: border-box;
+}
+
+
+/* ================================
+   HEADER
+================================ */
+
+.categories-header {
+  margin-bottom: 25px;
+}
+
+.categories-header h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 600;
+  color: #111;
+}
+
+.categories-header p {
+  margin: 7px 0 0;
+  color: #777;
+  font-size: 14px;
+}
+
+
+/* ================================
+   FORM SECTION
+================================ */
+
+.category-form-section {
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  padding: 25px;
+  margin-bottom: 30px;
+}
+
+.category-form-section h2 {
+  margin: 0 0 22px;
+  font-size: 19px;
+  font-weight: 600;
+  color: #111;
+}
+
+
+/* ================================
+   FORM GRID
+================================ */
+
+.category-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 250px;
+  gap: 20px;
+}
+
+
+/* ================================
+   FORM GROUP
+================================ */
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.form-group label span {
+  color: #d11;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #dcdcdc;
+  border-radius: 5px;
+  padding: 11px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #222;
+  background: #fff;
+  outline: none;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: #111;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+
+/* ================================
+   FORM BUTTONS
+================================ */
+
+.category-form-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 5px;
+}
+
+.category-form-buttons button {
+  border: none;
+  background: #111;
+  color: #fff;
+  padding: 11px 20px;
+  border-radius: 5px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.category-form-buttons button:hover {
+  background: #333;
+}
+
+.category-form-buttons .cancel-button {
+  background: #eee;
+  color: #333;
+}
+
+.category-form-buttons .cancel-button:hover {
+  background: #ddd;
+}
+
+
+/* ================================
+   TABLE SECTION
+================================ */
+
+.categories-table-section {
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  padding: 25px;
+}
+
+.categories-table-section h2 {
+  margin: 0 0 20px;
+  font-size: 19px;
+  font-weight: 600;
+  color: #111;
+}
+
+
+/* ================================
+   TABLE
+================================ */
+
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table-wrapper table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 700px;
+}
+
+.table-wrapper th {
+  background: #f5f5f5;
+  color: #333;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  padding: 13px 14px;
+  border-bottom: 1px solid #ddd;
+}
+
+.table-wrapper td {
+  padding: 14px;
+  font-size: 14px;
+  color: #555;
+  border-bottom: 1px solid #eee;
+  vertical-align: middle;
+}
+
+.table-wrapper tbody tr:hover {
+  background: #fafafa;
+}
+
+.table-wrapper td strong {
+  color: #111;
+  font-weight: 500;
+}
+
+
+/* ================================
+   STATUS
+================================ */
+
+.status-active,
+.status-inactive {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-active {
+  background: #e9f7ef;
+  color: #18864b;
+}
+
+.status-inactive {
+  background: #f3f3f3;
+  color: #777;
+}
+
+
+/* ================================
+   ACTION BUTTONS
+================================ */
+
+.edit-button,
+.delete-button {
+  border: none;
+  padding: 7px 13px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  margin-right: 7px;
+}
+
+.edit-button {
+  background: #f1f1f1;
+  color: #222;
+}
+
+.edit-button:hover {
+  background: #ddd;
+}
+
+.delete-button {
+  background: #fff0f0;
+  color: #d33;
+}
+
+.delete-button:hover {
+  background: #ffe0e0;
+}
+
+
+/* ================================
+   NO DATA
+================================ */
+
+.no-data {
+  text-align: center;
+  padding: 35px !important;
+  color: #888 !important;
+}
+
+
+/* ================================
+   RESPONSIVE
+================================ */
+
+@media (max-width: 768px) {
+
+  .categories-page {
+    padding: 20px;
+  }
+
+  .category-form-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .category-form-section,
+  .categories-table-section {
+    padding: 18px;
+  }
+
+  .categories-header h1 {
+    font-size: 24px;
+  }
+
+}
+
+.categories-page {
+  margin-left: 250px;
+  padding: 40px;
+  background: #f8f8f7;
+  min-height: 100vh;
+  box-sizing: border-box;
+}

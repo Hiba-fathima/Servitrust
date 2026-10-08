@@ -11,6 +11,7 @@ import Dashboard from './Pages/Dashboard'
 import Providers from './Pages/Provider'
 import Verification from './Pages/Verification'
 import Requests from './Pages/Requests'
+import Categories from './Pages/Categories'
 
 
 function App() {
@@ -32,7 +33,7 @@ function App() {
 
         <Route path="/admin/requests" element={<Requests />} />
 
-
+<Route path="/categories" element={<Categories />} />
       </Routes>
     </>
   )

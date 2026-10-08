@@ -23,6 +23,9 @@ function Sidebar() {
         <Link to="/admin/provider">
           Providers
         </Link>
+        <Link to="/categories">
+  Categories
+</Link>
 
         <Link to="/admin/services">
           Services

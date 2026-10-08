@@ -1,10 +1,12 @@
+
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import "../Css/Provider.css"
+import "../Css/Provider.css";
 
 const Providers = () => {
   const [providers, setProviders] = useState([]);
   const [services, setServices] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [showForm, setShowForm] = useState(false);
 
   const [name, setName] = useState("");
@@ -12,34 +14,38 @@ const Providers = () => {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
 
-  const [service, setService] = useState("");
+  // MULTIPLE CATEGORIES
+  const [selectedCategories, setSelectedCategories] = useState([]);
+
+  // MULTIPLE SERVICES
+  const [selectedServices, setSelectedServices] = useState([]);
+
   const [location, setLocation] = useState("");
   const [experience, setExperience] = useState("");
   const [description, setDescription] = useState("");
   const [availability, setAvailability] = useState("Available");
 
-const [currentPage, setCurrentPage] = useState(1);
-const providersPerPage = 4;
+  const [currentPage, setCurrentPage] = useState(1);
+  const providersPerPage = 4;
 
-const [search, setSearch] = useState("");
+  const [search, setSearch] = useState("");
 
   const getProviders = async () => {
-  try {
-    const response = await axios.get(
-      "https://servitrust-baxkend.onrender.com/providers"
-    );
+    try {
+      const response = await axios.get(
+        "https://servitrust-baxkend.onrender.com/providers"
+      );
 
-    console.log("PROVIDERS API RESPONSE:", response.data);
+      console.log("PROVIDERS API RESPONSE:", response.data);
 
-    setProviders(response.data);
-    setCurrentPage(1);
+      setProviders(response.data);
+      setCurrentPage(1);
+    } catch (error) {
+      console.log("GET PROVIDERS ERROR:", error);
+    }
+  };
 
-  } catch (error) {
-    console.log("GET PROVIDERS ERROR:", error);
-  }
-};
-
-  // NEW: GET SERVICES FROM ADMIN SERVICES
+  // GET SERVICES FROM ADMIN SERVICES
   const getServices = async () => {
     try {
       const response = await axios.get(
@@ -52,88 +58,162 @@ const [search, setSearch] = useState("");
     }
   };
 
+  // GET CATEGORIES FROM ADMIN CATEGORIES
+  const getCategories = async () => {
+    try {
+      const response = await axios.get(
+        "https://servitrust-baxkend.onrender.com/categories"
+      );
+
+      const activeCategories = response.data.filter(
+        (category) => category.status === "Active"
+      );
+
+      setCategories(activeCategories);
+    } catch (error) {
+      console.log("GET CATEGORIES ERROR:", error);
+    }
+  };
+
   useEffect(() => {
     getProviders();
-    getServices(); // NEW
+    getServices();
+    getCategories();
   }, []);
+
+  // CATEGORY CHECKBOX CHANGE
+  const handleCategoryChange = (categoryName) => {
+    setSelectedCategories((prev) => {
+      if (prev.includes(categoryName)) {
+        return prev.filter(
+          (category) => category !== categoryName
+        );
+      }
+
+      return [...prev, categoryName];
+    });
+
+    // Remove services that no longer belong to selected categories
+    setSelectedServices((prevServices) => {
+      return prevServices.filter((serviceName) => {
+        const serviceItem = services.find(
+          (item) => item.name === serviceName
+        );
+
+        return (
+          serviceItem &&
+          selectedCategories.includes(serviceItem.category)
+        );
+      });
+    });
+  };
+
+  // SERVICE CHECKBOX CHANGE
+  const handleServiceChange = (serviceName) => {
+    setSelectedServices((prev) => {
+      if (prev.includes(serviceName)) {
+        return prev.filter(
+          (service) => service !== serviceName
+        );
+      }
+
+      return [...prev, serviceName];
+    });
+  };
+
+  // SERVICES THAT BELONG TO SELECTED CATEGORIES
+  const getServicesForCategory = (categoryName) => {
+    return services.filter(
+      (item) => item.category === categoryName
+    );
+  };
 
   const resetForm = () => {
     setName("");
     setEmail("");
     setPhone("");
     setPassword("");
-    setService("");
+    setSelectedCategories([]);
+    setSelectedServices([]);
     setLocation("");
     setExperience("");
     setDescription("");
     setAvailability("Available");
   };
 
-const handleAddProvider = async (e) => {
-  e.preventDefault();
+  const handleAddProvider = async (e) => {
+    e.preventDefault();
 
-  try {
-    const data = {
-      name,
-      email,
-      phone,
-      password,
-      category: ["General"],
-      services: [service],
-      location,
-      experience,
-      description,
-      availability
-    };
+    if (selectedCategories.length === 0) {
+      alert("Please select at least one category.");
+      return;
+    }
 
-    const response = await axios.post(
-      "http://localhost:5000/admin/providers",
-      data
+    if (selectedServices.length === 0) {
+      alert("Please select at least one service.");
+      return;
+    }
+
+    try {
+      const data = {
+        name,
+        email,
+        phone,
+        password,
+        category: selectedCategories,
+        services: selectedServices,
+        location,
+        experience,
+        description,
+        availability
+      };
+
+      console.log("PROVIDER DATA:", data);
+
+      const response = await axios.post(
+        "http://localhost:5000/admin/providers",
+        data
+      );
+
+      alert(
+        `Provider created successfully!\n\nEmail: ${email}\nPassword: ${password}`
+      );
+
+      getProviders();
+      resetForm();
+      setShowForm(false);
+    } catch (error) {
+      console.log("ADD PROVIDER ERROR:", error);
+
+      alert(
+        error.response?.data?.message ||
+        "Failed to create provider"
+      );
+    }
+  };
+
+  const filteredProviders = providers.filter((provider) => {
+    const searchText = search.toLowerCase();
+
+    return (
+      provider.name?.toLowerCase().includes(searchText) ||
+      provider.location?.toLowerCase().includes(searchText)
     );
-
-    alert(
-      `Provider created successfully!\n\nEmail: ${email}\nPassword: ${password}`
-    );
-
-    getProviders();
-    resetForm();
-    setShowForm(false);
-
-  } catch (error) {
-    console.log("ADD PROVIDER ERROR:", error);
-
-    alert(
-      error.response?.data?.message ||
-      "Failed to create provider"
-    );
-  }
-};
-
-
- const filteredProviders = providers.filter((provider) => {
-  const searchText = search.toLowerCase();
-
-  return (
-    provider.name?.toLowerCase().includes(searchText) ||
-    provider.location?.toLowerCase().includes(searchText)
-  );
-});
+  });
 
   const totalPages = Math.ceil(
-  filteredProviders.length / providersPerPage
-);
-
-const startIndex =
-  (currentPage - 1) * providersPerPage;
-
-const currentProviders =
-  filteredProviders.slice(
-    startIndex,
-    startIndex + providersPerPage
+    filteredProviders.length / providersPerPage
   );
 
+  const startIndex =
+    (currentPage - 1) * providersPerPage;
 
- 
+  const currentProviders =
+    filteredProviders.slice(
+      startIndex,
+      startIndex + providersPerPage
+    );
+
   return (
     <div className="providers-page">
 
@@ -187,9 +267,12 @@ const currentProviders =
 
           </div>
 
+
           <form onSubmit={handleAddProvider}>
 
             <div className="provider-form-grid">
+
+              {/* NAME */}
 
               <div className="provider-input">
                 <label>Full Name</label>
@@ -204,6 +287,8 @@ const currentProviders =
               </div>
 
 
+              {/* EMAIL */}
+
               <div className="provider-input">
                 <label>Email</label>
 
@@ -216,6 +301,8 @@ const currentProviders =
                 />
               </div>
 
+
+              {/* PHONE */}
 
               <div className="provider-input">
                 <label>Phone</label>
@@ -230,6 +317,8 @@ const currentProviders =
               </div>
 
 
+              {/* PASSWORD */}
+
               <div className="provider-input">
                 <label>Login Password</label>
 
@@ -243,30 +332,139 @@ const currentProviders =
               </div>
 
 
-              {/* ONLY CHANGED PART */}
-              <div className="provider-input">
-                <label>Service</label>
+              {/* CATEGORY CHECKBOXES */}
 
-                <select
-                  value={service}
-                  onChange={(e) => setService(e.target.value)}
-                  required
-                >
-                  <option value="">
-                    Select Service
-                  </option>
+              <div className="provider-input full">
 
-                  {services.map((item) => (
-                    <option
-                      key={item._id}
-                      value={item.name}
-                    >
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
+                <label>Categories</label>
+
+                <div className="provider-checkbox-group">
+
+                  {categories.length > 0 ? (
+
+                    categories.map((item) => (
+
+                      <label
+                        key={item._id}
+                        className="provider-checkbox"
+                      >
+
+                        <input
+                          type="checkbox"
+                          checked={selectedCategories.includes(
+                            item.name
+                          )}
+                          onChange={() =>
+                            handleCategoryChange(item.name)
+                          }
+                        />
+
+                        <span>
+                          {item.name}
+                        </span>
+
+                      </label>
+
+                    ))
+
+                  ) : (
+
+                    <p>
+                      No active categories available.
+                    </p>
+
+                  )}
+
+                </div>
+
               </div>
 
+
+              {/* SELECTED CATEGORY SERVICES */}
+
+              {selectedCategories.length > 0 && (
+
+                <div className="provider-input full">
+
+                  <label>Services</label>
+
+                  <div className="provider-services-container">
+
+                    {selectedCategories.map((categoryName) => {
+
+                      const categoryServices =
+                        getServicesForCategory(categoryName);
+
+                      return (
+
+                        <div
+                          key={categoryName}
+                          className="provider-service-category"
+                        >
+
+                          <h4>
+                            {categoryName}
+                          </h4>
+
+
+                          {categoryServices.length > 0 ? (
+
+                            <div className="provider-checkbox-group">
+
+                              {categoryServices.map(
+                                (item) => (
+
+                                  <label
+                                    key={item._id}
+                                    className="provider-checkbox"
+                                  >
+
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedServices.includes(
+                                        item.name
+                                      )}
+                                      onChange={() =>
+                                        handleServiceChange(
+                                          item.name
+                                        )
+                                      }
+                                    />
+
+                                    <span>
+                                      {item.name}
+                                    </span>
+
+                                  </label>
+
+                                )
+                              )}
+
+                            </div>
+
+                          ) : (
+
+                            <p>
+                              No services available
+                              under this category.
+                            </p>
+
+                          )}
+
+                        </div>
+
+                      );
+
+                    })}
+
+                  </div>
+
+                </div>
+
+              )}
+
+
+              {/* LOCATION */}
 
               <div className="provider-input">
                 <label>Location</label>
@@ -281,6 +479,8 @@ const currentProviders =
               </div>
 
 
+              {/* EXPERIENCE */}
+
               <div className="provider-input">
                 <label>Experience</label>
 
@@ -294,6 +494,8 @@ const currentProviders =
               </div>
 
 
+              {/* AVAILABILITY */}
+
               <div className="provider-input">
                 <label>Availability</label>
 
@@ -303,6 +505,7 @@ const currentProviders =
                     setAvailability(e.target.value)
                   }
                 >
+
                   <option value="Available">
                     Available
                   </option>
@@ -314,11 +517,15 @@ const currentProviders =
                   <option value="Unavailable">
                     Unavailable
                   </option>
+
                 </select>
               </div>
 
 
+              {/* DESCRIPTION */}
+
               <div className="provider-input full">
+
                 <label>Description</label>
 
                 <textarea
@@ -330,10 +537,13 @@ const currentProviders =
                   placeholder="Describe the provider's service..."
                   required
                 />
+
               </div>
 
             </div>
 
+
+            {/* FORM BUTTONS */}
 
             <div className="provider-form-actions">
 
@@ -363,25 +573,31 @@ const currentProviders =
       )}
 
 
-      {/* PROVIDER TABLE */}
+      {/* PROVIDER SEARCH */}
+
       <div className="providers-search">
-  <input
-    type="text"
-    placeholder="Search by provider name or location..."
-    value={search}
-    onChange={(e) => {
-      setSearch(e.target.value);
-      setCurrentPage(1);
-    }}
-  />
-</div>
+
+        <input
+          type="text"
+          placeholder="Search by provider name or location..."
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setCurrentPage(1);
+          }}
+        />
+
+      </div>
+
+
+      {/* PROVIDER TABLE */}
 
       <div className="providers-table-container">
-        
 
         <table className="providers-table">
 
           <thead>
+
             <tr>
               <th>#</th>
               <th>Provider</th>
@@ -391,7 +607,9 @@ const currentProviders =
               <th>Verification</th>
               <th>Reliability</th>
             </tr>
+
           </thead>
+
 
           <tbody>
 
@@ -401,18 +619,25 @@ const currentProviders =
 
                 <tr key={provider._id}>
 
-                  <td>{startIndex  + index + 1}</td>
+                  <td>
+                    {startIndex + index + 1}
+                  </td>
+
 
                   <td>
+
                     <div className="provider-name-cell">
 
                       <div className="provider-avatar">
+
                         {provider.name
                           ?.charAt(0)
                           .toUpperCase()}
+
                       </div>
 
                       <div>
+
                         <strong>
                           {provider.name}
                         </strong>
@@ -420,40 +645,57 @@ const currentProviders =
                         <span>
                           {provider.phone}
                         </span>
+
                       </div>
 
                     </div>
-                  </td>
 
-<td>
-  {Array.isArray(provider.category)
-    ? provider.category.join(", ")
-    : provider.category}
-</td>
-                  <td>{provider.location}</td>
+                  </td>
 
 
                   <td>
+
+                    {Array.isArray(provider.category)
+                      ? provider.category.join(", ")
+                      : provider.category}
+
+                  </td>
+
+
+                  <td>
+                    {provider.location}
+                  </td>
+
+
+                  <td>
+
                     <span className="provider-status">
                       {provider.availability}
                     </span>
+
                   </td>
 
+
                   <td>
-  <span
-    className={`verification-badge ${
-      provider.verificationStatus === "Verified"
-        ? "verification-verified"
-        : provider.verificationStatus === "Pending"
-        ? "verification-pending"
-        : provider.verificationStatus === "Rejected"
-        ? "verification-rejected"
-        : ""
-    }`}
-  >
-    {provider.verificationStatus}
-  </span>
-</td>
+
+                    <span
+                      className={`verification-badge ${
+                        provider.verificationStatus === "Verified"
+                          ? "verification-verified"
+                          : provider.verificationStatus === "Pending"
+                          ? "verification-pending"
+                          : provider.verificationStatus === "Rejected"
+                          ? "verification-rejected"
+                          : ""
+                      }`}
+                    >
+
+                      {provider.verificationStatus}
+
+                    </span>
+
+                  </td>
+
 
                   <td>
                     {provider.reliabilityScore || 0}%
@@ -466,12 +708,14 @@ const currentProviders =
             ) : (
 
               <tr>
+
                 <td
                   colSpan="8"
                   className="no-providers"
                 >
                   No providers found.
                 </td>
+
               </tr>
 
             )}
@@ -479,65 +723,69 @@ const currentProviders =
           </tbody>
 
         </table>
-        
-{providers.length > 0 && totalPages > 1 && (
-  <div className="providers-pagination">
 
-    <button
-      type="button"
-      disabled={currentPage === 1}
-      onClick={() =>
-        setCurrentPage(currentPage - 1)
-      }
-    >
-      ← Previous
-    </button>
 
-    <div className="pagination-pages">
+        {/* PAGINATION */}
 
-      {Array.from(
-        { length: totalPages },
-        (_, index) => index + 1
-      ).map((page) => (
+        {providers.length > 0 && totalPages > 1 && (
 
-        <button
-          type="button"
-          key={page}
-          className={
-            currentPage === page
-              ? "active"
-              : ""
-          }
-          onClick={() =>
-            setCurrentPage(page)
-          }
-        >
-          {page}
-        </button>
+          <div className="providers-pagination">
 
-      ))}
+            <button
+              type="button"
+              disabled={currentPage === 1}
+              onClick={() =>
+                setCurrentPage(currentPage - 1)
+              }
+            >
+              ← Previous
+            </button>
 
-    </div>
 
-    <button
-      type="button"
-      disabled={currentPage === totalPages}
-      onClick={() =>
-        setCurrentPage(currentPage + 1)
-      }
-    >
-      Next →
-    </button>
+            <div className="pagination-pages">
 
-  </div>
-)}
+              {Array.from(
+                { length: totalPages },
+                (_, index) => index + 1
+              ).map((page) => (
 
-        
+                <button
+                  type="button"
+                  key={page}
+                  className={
+                    currentPage === page
+                      ? "active"
+                      : ""
+                  }
+                  onClick={() =>
+                    setCurrentPage(page)
+                  }
+                >
+                  {page}
+                </button>
+
+              ))}
+
+            </div>
+
+
+            <button
+              type="button"
+              disabled={currentPage === totalPages}
+              onClick={() =>
+                setCurrentPage(currentPage + 1)
+              }
+            >
+              Next →
+            </button>
+
+          </div>
+
+        )}
+
       </div>
-      
 
     </div>
-    
   );
 };
 

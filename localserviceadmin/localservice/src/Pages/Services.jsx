@@ -30,6 +30,8 @@ function Services() {
 
   const [searchTerm, setSearchTerm] = useState("");
 
+  const [categories, setCategories] = useState([]);
+
   const getServices = async () => {
     try {
       const response = await axios.get(
@@ -44,6 +46,7 @@ function Services() {
 
   useEffect(() => {
     getServices();
+    fetchCategories();
   }, []);
 
   const handleImageChange = (e) => {
@@ -253,6 +256,21 @@ const filteredServices = services.filter((service) => {
       setCurrentPage(currentPage - 1);
     }
   };
+  const fetchCategories = async () => {
+  try {
+    const response = await axios.get("http://localhost:5000/categories");
+
+    const activeCategories = response.data.filter(
+      (category) => category.status === "Active"
+    );
+
+    setCategories(activeCategories);
+  } catch (error) {
+    console.log("Failed to fetch categories", error);
+  }
+};
+
+fetchCategories();
 
   return (
     <div className="services-page">
@@ -318,60 +336,17 @@ const filteredServices = services.filter((service) => {
                 <label>Category</label>
 
                 <select
-                  value={category}
-                  onChange={(e) =>
-                    setCategory(e.target.value)
-                  }
-                  required
-                >
-                  <option value="">
-                    Select Category
-                  </option>
+  value={category}
+  onChange={(e) => setCategory(e.target.value)}
+>
+  <option value="">Select Category</option>
 
-                  <option value="Home Maintenance">
-                    Home Maintenance
-                  </option>
-
-                  <option value="Cleaning">
-                    Cleaning
-                  </option>
-
-                  <option value="Plumbing">
-                    Plumbing
-                  </option>
-
-                  <option value="Electrical">
-                    Electrical
-                  </option>
-
-                  <option value="AC Services">
-                    AC Services
-                  </option>
-
-                  <option value="Appliance Repair">
-                    Appliance Repair
-                  </option>
-
-                  <option value="Painting">
-                    Painting
-                  </option>
-
-                  <option value="Carpentry">
-                    Carpentry
-                  </option>
-
-                  <option value="Pest Control">
-                    Pest Control
-                  </option>
-
-                  <option value="Vehicle Services">
-                    Vehicle Services
-                  </option>
-
-                  <option value="Gardening">
-                    Gardening
-                  </option>
-                </select>
+  {categories.map((item) => (
+    <option key={item._id} value={item.name}>
+      {item.name}
+    </option>
+  ))}
+</select>
               </div>
 
               <div className="input-box">
