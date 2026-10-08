@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
+import "../Css/ServiceProvider.css"
 
 const ServiceProviders = () => {
   const { id } = useParams();
@@ -28,7 +29,10 @@ const ServiceProviders = () => {
       setProviders(providerResponse.data);
 
     } catch (error) {
-      console.log("GET SERVICE PROVIDERS ERROR:", error);
+      console.log(
+        "GET SERVICE PROVIDERS ERROR:",
+        error
+      );
     }
   };
 
@@ -45,96 +49,207 @@ const ServiceProviders = () => {
   }
 
   return (
-    <div className="service-providers-page">
+    <div className="providers-page">
 
-      <div className="providers-page-header">
+      {/* PAGE HEADER */}
+
+      <div className="providers-header">
 
         <button
-          className="providers-back-btn"
-          onClick={() => navigate(`/service/${id}`)}
+          className="back-button"
+          onClick={() =>
+            navigate(`/service/${id}`)
+          }
         >
           ← Back to Service
         </button>
 
-        <p>VERIFIED PROVIDERS</p>
-
-        <h1>{service.name}</h1>
-
-        <span>
-          Find trusted and verified professionals for this service.
+        <span className="page-label">
+          VERIFIED PROFESSIONALS
         </span>
+
+        <h1>
+          Find the right provider
+        </h1>
+
+        <p>
+          Trusted professionals available for{" "}
+          <strong>{service.name}</strong>
+        </p>
 
       </div>
 
 
-      <div className="providers-page-list">
+      {/* PROVIDERS */}
+
+      <div className="provider-list">
 
         {providers.length > 0 ? (
 
           providers.map((provider) => (
 
             <div
-              className="service-provider-card"
+              className="provider-card"
               key={provider._id}
             >
 
-              <div className="provider-main">
+              {/* PROVIDER NAME FIRST */}
+
+              <div className="provider-header">
 
                 <div className="provider-avatar">
-                  {provider.name?.charAt(0).toUpperCase()}
+                  {provider.name
+                    ?.charAt(0)
+                    .toUpperCase() || "P"}
                 </div>
 
-                <div className="provider-details">
+                <div className="provider-heading">
 
-                  <h2>{provider.name}</h2>
+                  <div className="provider-name-row">
 
-                  <p>{provider.service}</p>
+                    <h2>
+                      {provider.name ||
+                        "Service Provider"}
+                    </h2>
+
+                    <span className="verified-badge">
+                      ✓ Verified
+                    </span>
+
+                  </div>
+
+                  <p>
+                    {Array.isArray(
+                      provider.services
+                    )
+                      ? provider.services.join(
+                          " • "
+                        )
+                      : provider.services ||
+                        service.name}
+                  </p>
 
                 </div>
-
-                <span className="verified-badge">
-                  ✓ Verified
-                </span>
 
               </div>
 
 
-              <div className="provider-info">
+              {/* PROVIDER INFORMATION */}
 
-                <div>
-                  <span>Location</span>
-                  <strong>{provider.location}</strong>
-                </div>
+              <div className="provider-information">
 
-                <div>
-                  <span>Experience</span>
-                  <strong>{provider.experience}</strong>
-                </div>
+                <div className="info-item">
 
-                <div>
-                  <span>Availability</span>
-                  <strong>{provider.availability}</strong>
-                </div>
+                  <span>
+                    Location
+                  </span>
 
-                <div>
-                  <span>Reliability Score</span>
                   <strong>
-                    {provider.reliabilityScore || 0}%
+                    {provider.location ||
+                      "Not specified"}
                   </strong>
+
+                </div>
+
+
+                <div className="info-item">
+
+                  <span>
+                    Experience
+                  </span>
+
+                  <strong>
+                    {provider.experience ||
+                      "Not specified"}
+                  </strong>
+
+                </div>
+
+
+                <div className="info-item">
+
+                  <span>
+                    Availability
+                  </span>
+
+                  <strong
+                    className={
+                      provider.availability ===
+                      "Available"
+                        ? "available"
+                        : ""
+                    }
+                  >
+                    {provider.availability ||
+                      "Not specified"}
+                  </strong>
+
+                </div>
+
+
+                <div className="info-item">
+
+                  <span>
+                    Reliability Score
+                  </span>
+
+                  <strong>
+                    {provider.reliabilityScore ||
+                      0}%
+                  </strong>
+
                 </div>
 
               </div>
 
 
-              <div className="provider-actions">
+              {/* BOTTOM */}
+
+              <div className="provider-footer">
+
+                <div className="reliability">
+
+                  <div className="reliability-top">
+
+                    <span>
+                      Reliability
+                    </span>
+
+                    <strong>
+                      {provider.reliabilityScore ||
+                        0}%
+                    </strong>
+
+                  </div>
+
+                  <div className="reliability-bar">
+
+                    <div
+                      className="reliability-fill"
+                      style={{
+                        width: `${Math.min(
+                          provider.reliabilityScore ||
+                            0,
+                          100
+                        )}%`
+                      }}
+                    />
+
+                  </div>
+
+                </div>
+
 
                 <button
-                  className="view-provider-btn"
+                  className="profile-button"
                   onClick={() =>
-                    navigate(`/provider/${provider._id}`)
+                    navigate(
+                      `/provider/${provider._id}`
+                    )
                   }
                 >
-                  View Profile →
+                  View Provider Profile
+                  <span>→</span>
                 </button>
 
               </div>
@@ -145,13 +260,30 @@ const ServiceProviders = () => {
 
         ) : (
 
-          <div className="no-provider-result">
-            <h3>No verified providers found</h3>
+          <div className="no-providers">
+
+            <div className="no-provider-symbol">
+              —
+            </div>
+
+            <h2>
+              No verified providers found
+            </h2>
 
             <p>
-              There are currently no verified providers available
-              for {service.name}.
+              There are currently no verified
+              professionals available for{" "}
+              <strong>{service.name}</strong>.
             </p>
+
+            <button
+              onClick={() =>
+                navigate(`/service/${id}`)
+              }
+            >
+              ← Back to Service
+            </button>
+
           </div>
 
         )}
