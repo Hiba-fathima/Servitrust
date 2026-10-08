@@ -8,6 +8,7 @@ const jwt = require("jsonwebtoken");
 const Service = require("./models/ServiceModel");
 const Provider = require("./models/ProviderModel");
 const ServiceRequest = require("./models/RequestModel");
+const Category = require("./models/CategoryModel");
 
 const app = express();
 
@@ -1469,6 +1470,138 @@ app.put("/providers/:id", async (req, res) => {
 
     res.status(500).json({
       message: "Failed to update provider profile"
+    });
+  }
+});
+
+
+
+app.get("/categories", async (req, res) => {
+  try {
+    const categories = await Category.find().sort({ createdAt: -1 });
+
+    res.json(categories);
+
+  } catch (error) {
+    console.log("GET CATEGORIES ERROR:", error);
+
+    res.status(500).json({
+      message: "Failed to get categories",
+      error: error.message
+    });
+  }
+});
+
+
+app.post("/categories", async (req, res) => {
+  try {
+    const { name, description } = req.body;
+
+    if (!name || !description) {
+      return res.status(400).json({
+        message: "Please fill all required fields"
+      });
+    }
+
+    const existingCategory = await Category.findOne({
+      name: name.trim()
+    });
+
+    if (existingCategory) {
+      return res.status(400).json({
+        message: "Category already exists"
+      });
+    }
+
+    const category = new Category({
+      name: name.trim(),
+      description: description.trim(),
+      status: "Active"
+    });
+
+    await category.save();
+
+    res.status(201).json({
+      message: "Category added successfully",
+      category
+    });
+
+  } catch (error) {
+    console.log("ADD CATEGORY ERROR:", error);
+
+    res.status(500).json({
+      message: "Failed to add category",
+      error: error.message
+    });
+  }
+});
+
+app.delete("/categories/:id", async (req, res) => {
+  try {
+    const category = await Category.findByIdAndDelete(
+      req.params.id
+    );
+
+    if (!category) {
+      return res.status(404).json({
+        message: "Category not found"
+      });
+    }
+
+    res.json({
+      message: "Category deleted successfully"
+    });
+
+  } catch (error) {
+    console.log("DELETE CATEGORY ERROR:", error);
+
+    res.status(500).json({
+      message: "Failed to delete category",
+      error: error.message
+    });
+  }
+});
+
+app.put("/categories/:id", async (req, res) => {
+  try {
+    const { name, description, status } = req.body;
+
+    if (!name || !description) {
+      return res.status(400).json({
+        message: "Please fill all required fields"
+      });
+    }
+
+    const category = await Category.findByIdAndUpdate(
+      req.params.id,
+      {
+        name: name.trim(),
+        description: description.trim(),
+        status: status || "Active"
+      },
+      {
+        new: true,
+        runValidators: true
+      }
+    );
+
+    if (!category) {
+      return res.status(404).json({
+        message: "Category not found"
+      });
+    }
+
+    res.json({
+      message: "Category updated successfully",
+      category
+    });
+
+  } catch (error) {
+    console.log("UPDATE CATEGORY ERROR:", error);
+
+    res.status(500).json({
+      message: "Failed to update category",
+      error: error.message
     });
   }
 });
