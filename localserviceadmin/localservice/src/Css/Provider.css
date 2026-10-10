@@ -1104,3 +1104,73 @@
   .provider-modal-footer { flex-wrap: wrap; }
   .provider-modal-footer button { flex: 1 1 auto; }
 }
+
+
+
+
+
+/* PROVIDER ACTION BUTTONS */
+.providers-table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.providers-table {
+  width: 100%;
+  min-width: 950px;
+  border-collapse: collapse;
+}
+
+.providers-table th,
+.providers-table td {
+  padding: 14px 12px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.providers-table th:last-child,
+.providers-table td:last-child {
+  display: table-cell !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.provider-row-actions {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+}
+
+.provider-view-btn,
+.provider-edit-btn {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.provider-view-btn {
+  background: #e5f0ff;
+  color: #2458a6;
+}
+
+.provider-edit-btn {
+  background: #e1f5ec;
+  color: #16734b;
+}
+
+.provider-view-btn:hover {
+  background: #cfe2ff;
+}
+
+.provider-edit-btn:hover {
+  background: #c6edda;
+}
