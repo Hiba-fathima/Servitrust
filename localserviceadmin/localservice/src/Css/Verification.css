@@ -1,8 +1,8 @@
 /* ==============================
-   SERVICES PAGE
+   VERIFICATION PAGE
 ============================== */
 
-.services-page {
+.verification-page {
   margin-left: 250px;
   padding: 40px;
   min-height: 100vh;
@@ -13,15 +13,15 @@
   box-sizing: border-box;
 }
 
-.services-page *,
-.services-page *::before,
-.services-page *::after {
+.verification-page *,
+.verification-page *::before,
+.verification-page *::after {
   box-sizing: border-box;
 }
 
 /* HEADER */
 
-.services-header {
+.verification-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -29,7 +29,7 @@
   margin-bottom: 30px;
 }
 
-.services-eyebrow {
+.verification-eyebrow {
   margin: 0 0 9px;
   color: #777;
   font-size: 12px;
@@ -37,7 +37,7 @@
   letter-spacing: 1.5px;
 }
 
-.services-header h1 {
+.verification-header h1 {
   margin: 0 0 9px;
   color: #161616;
   font-size: 34px;
@@ -45,17 +45,17 @@
   line-height: 1.2;
 }
 
-.services-header > div:first-child > span {
+.verification-header > div:first-child > span {
   display: block;
   color: #707070;
   font-size: 14px;
   line-height: 1.6;
 }
 
-/* TOTAL COUNT */
+/* COUNT */
 
-.services-count {
-  min-width: 150px;
+.verification-count {
+  min-width: 170px;
   padding: 19px 23px;
   display: flex;
   flex-direction: column;
@@ -65,21 +65,21 @@
   border-radius: 8px;
 }
 
-.services-count strong {
+.verification-count strong {
   color: #161616;
   font-size: 25px;
   font-weight: 700;
   line-height: 1.2;
 }
 
-.services-count span {
+.verification-count span {
   color: #777;
   font-size: 12px;
 }
 
 /* TOOLBAR */
 
-.services-toolbar {
+.verification-toolbar {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -91,10 +91,10 @@
   border-radius: 8px;
 }
 
-.services-toolbar input,
-.services-toolbar select {
+.verification-toolbar input,
+.verification-toolbar select {
   height: 43px;
-  min-width: 145px;
+  min-width: 150px;
   padding: 0 13px;
   color: #292929;
   background: #fff;
@@ -105,26 +105,26 @@
   outline: none;
 }
 
-.services-toolbar input {
-  flex: 1 1 250px;
+.verification-toolbar input {
+  flex: 1 1 260px;
   min-width: 200px;
 }
 
-.services-toolbar select {
-  flex: 0 1 175px;
+.verification-toolbar select {
+  flex: 0 1 190px;
 }
 
-.services-toolbar input:focus,
-.services-toolbar select:focus {
+.verification-toolbar input:focus,
+.verification-toolbar select:focus {
   border-color: #555;
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05);
 }
 
-.services-toolbar input::placeholder {
+.verification-toolbar input::placeholder {
   color: #929292;
 }
 
-.services-reset-btn {
+.verification-reset-btn {
   min-height: 43px;
   padding: 0 19px;
   color: #222;
@@ -135,21 +135,21 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s, border-color 0.2s;
 }
 
-.services-reset-btn:hover {
+.verification-reset-btn:hover {
   background: #f2f2f2;
   border-color: #bcbcbc;
 }
 
 /* ERROR */
 
-.services-error {
+.verification-error {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 15px;
+  flex-wrap: wrap;
+  gap: 12px;
   margin-bottom: 18px;
   padding: 14px 16px;
   color: #8b2525;
@@ -159,7 +159,7 @@
   font-size: 13px;
 }
 
-.services-error button {
+.verification-error button {
   padding: 8px 14px;
   color: #fff;
   background: #222;
@@ -168,9 +168,9 @@
   cursor: pointer;
 }
 
-/* TABLE CONTAINER */
+/* TABLE */
 
-.services-table-container {
+.verification-table-container {
   width: 100%;
   overflow-x: auto;
   background: #fff;
@@ -178,20 +178,18 @@
   border-radius: 8px;
 }
 
-/* TABLE */
-
-.services-table {
+.verification-table {
   width: 100%;
   min-width: 1050px;
   border-collapse: collapse;
   text-align: left;
 }
 
-.services-table thead {
+.verification-table thead {
   background: #f5f5f4;
 }
 
-.services-table th {
+.verification-table th {
   padding: 17px 15px;
   color: #686868;
   font-size: 11px;
@@ -202,7 +200,7 @@
   border-bottom: 1px solid #e6e6e6;
 }
 
-.services-table td {
+.verification-table td {
   padding: 16px 15px;
   color: #454545;
   font-size: 13px;
@@ -211,137 +209,160 @@
   vertical-align: middle;
 }
 
-.services-table tbody tr:last-child td {
+.verification-table tbody tr:last-child td {
   border-bottom: none;
 }
 
-.services-table tbody tr:hover {
+.verification-table tbody tr:hover {
   background: #fafafa;
 }
 
-.services-table td:first-child {
-  color: #777;
-  white-space: nowrap;
-}
+/* PROVIDER CELL */
 
-/* SERVICE IMAGE + NAME */
-
-.service-name-cell {
+.verification-provider {
   display: flex;
   align-items: center;
   gap: 11px;
-  min-width: 180px;
+  min-width: 190px;
 }
 
-.service-name-cell strong {
+.verification-avatar {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: #171717;
+  border-radius: 50%;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.verification-photo {
+  object-fit: cover;
+  border: 1px solid #e5e5e5;
+}
+
+.verification-provider-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.verification-provider-info strong {
   color: #222;
   font-size: 13px;
   font-weight: 600;
   overflow-wrap: anywhere;
 }
 
-.service-thumbnail,
-.service-thumbnail-placeholder {
-  width: 42px;
-  height: 42px;
-  flex: 0 0 42px;
-  border-radius: 7px;
+.verification-provider-info span {
+  color: #777;
+  font-size: 12px;
 }
 
-.service-thumbnail {
-  display: block;
-  object-fit: cover;
-  background: #f0f0f0;
-  border: 1px solid #e9e9e9;
-}
+/* BADGES */
 
-.service-thumbnail-placeholder {
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  background: #222;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-/* PRICING */
-
-.service-pricing {
-  color: #222;
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-/* STATUS BADGES */
-
-.service-badge {
+.pending-status,
+.verification-availability {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 25px;
   padding: 5px 10px;
-  border: 1px solid #e5e5e5;
+  color: #916200;
+  background: #fff7df;
+  border: 1px solid #f0e2b8;
   border-radius: 5px;
   font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
 }
 
-.availability-available,
-.status-active {
-  color: #24633b;
-  background: #edf7ef;
-  border-color: #d6ead9;
+.verification-availability {
+  color: #444;
+  background: #f4f4f4;
+  border-color: #e4e4e4;
 }
 
-.availability-unavailable,
-.status-inactive {
-  color: #9a3535;
-  background: #fff0f0;
-  border-color: #f0d8d8;
+/* ACTION BUTTONS */
+
+.verification-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
-/* VIEW BUTTON */
-
-.service-view-btn {
-  min-width: 64px;
-  min-height: 34px;
-  padding: 7px 13px;
-  color: #fff;
-  background: #171717;
-  border: 1px solid #171717;
+.verification-actions button,
+.verification-modal-actions button {
+  min-height: 33px;
+  padding: 7px 10px;
   border-radius: 5px;
   font-family: inherit;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s;
 }
 
-.service-view-btn:hover {
-  background: #3c3c3c;
-  border-color: #3c3c3c;
+.verification-view-btn {
+  color: #222;
+  background: #fff;
+  border: 1px solid #d7d7d7;
+}
+
+.verification-view-btn:hover {
+  background: #f0f0f0;
+}
+
+.approve-btn {
+  color: #fff;
+  background: #171717;
+  border: 1px solid #171717;
+}
+
+.approve-btn:hover:not(:disabled) {
+  background: #3b3b3b;
+  border-color: #3b3b3b;
+}
+
+.reject-btn {
+  color: #a12d2d;
+  background: #fff;
+  border: 1px solid #e7caca;
+}
+
+.reject-btn:hover:not(:disabled) {
+  background: #fff0f0;
+}
+
+.verification-actions button:disabled,
+.verification-modal-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* EMPTY STATE */
 
-.services-empty {
+.no-pending {
   height: 125px;
   text-align: center;
   color: #777 !important;
   font-size: 13px !important;
 }
 
-.services-empty strong,
-.services-empty span {
+.no-pending strong,
+.no-pending span {
   display: block;
   margin-bottom: 5px;
 }
 
 /* PAGINATION */
 
-.services-pagination {
+.verification-pagination {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -351,19 +372,19 @@
   border-top: 1px solid #ededed;
 }
 
-.services-pagination-info {
+.verification-pagination > span {
   color: #737373;
   font-size: 12px;
 }
 
-.services-pagination-buttons {
+.verification-pagination-buttons {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 6px;
 }
 
-.services-pagination-buttons button {
+.verification-pagination-buttons button {
   min-width: 34px;
   min-height: 34px;
   padding: 6px 10px;
@@ -376,26 +397,26 @@
   cursor: pointer;
 }
 
-.services-pagination-buttons button:hover:not(:disabled) {
+.verification-pagination-buttons button:hover:not(:disabled) {
   background: #f0f0f0;
 }
 
-.services-pagination-buttons button.active-page {
+.verification-pagination-buttons button.active-page {
   color: #fff;
   background: #171717;
   border-color: #171717;
 }
 
-.services-pagination-buttons button:disabled {
+.verification-pagination-buttons button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
 /* ==============================
-   SERVICE DETAILS MODAL
+   PROVIDER DETAILS MODAL
 ============================== */
 
-.service-modal-overlay {
+.verification-modal-overlay {
   position: fixed;
   inset: 0;
   z-index: 1000;
@@ -407,7 +428,7 @@
   overflow-y: auto;
 }
 
-.service-modal {
+.verification-modal {
   width: 100%;
   max-width: 760px;
   max-height: 90vh;
@@ -420,7 +441,7 @@
   box-shadow: 0 15px 50px rgba(0, 0, 0, 0.16);
 }
 
-.service-modal-header {
+.verification-modal-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -429,7 +450,7 @@
   border-bottom: 1px solid #e9e9e9;
 }
 
-.service-modal-header p {
+.verification-modal-header p {
   margin: 0 0 7px;
   color: #777;
   font-size: 11px;
@@ -437,7 +458,7 @@
   letter-spacing: 1.2px;
 }
 
-.service-modal-header h2 {
+.verification-modal-header h2 {
   margin: 0 0 8px;
   color: #171717;
   font-size: 24px;
@@ -445,13 +466,13 @@
   overflow-wrap: anywhere;
 }
 
-.service-modal-header span {
+.verification-modal-header span {
   color: #858585;
   font-size: 12px;
   overflow-wrap: anywhere;
 }
 
-.service-modal-close {
+.verification-modal-close {
   width: 36px;
   height: 36px;
   flex: 0 0 36px;
@@ -464,39 +485,39 @@
   cursor: pointer;
 }
 
-.service-modal-close:hover {
+.verification-modal-close:hover {
   background: #eaeaea;
 }
 
-.service-modal-body {
+.verification-modal-body {
   padding: 25px 27px;
   overflow-y: auto;
 }
 
-.service-modal-image-wrap {
+.verification-profile-image-wrap {
   width: 100%;
-  height: 200px;
-  margin-bottom: 24px;
+  height: 190px;
+  margin-bottom: 22px;
   overflow: hidden;
   background: #f5f5f4;
   border: 1px solid #e8e8e8;
   border-radius: 8px;
 }
 
-.service-modal-image {
+.verification-profile-image-wrap img {
   width: 100%;
   height: 100%;
   display: block;
   object-fit: contain;
 }
 
-.service-detail-grid {
+.verification-detail-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 13px;
 }
 
-.service-detail-item {
+.verification-detail {
   min-width: 0;
   padding: 15px 16px;
   background: #fafafa;
@@ -504,7 +525,7 @@
   border-radius: 7px;
 }
 
-.service-detail-item > span {
+.verification-detail > span {
   display: block;
   margin-bottom: 8px;
   color: #777;
@@ -514,7 +535,7 @@
   text-transform: uppercase;
 }
 
-.service-detail-item > strong {
+.verification-detail > strong {
   display: block;
   color: #222;
   font-size: 13px;
@@ -523,44 +544,45 @@
   overflow-wrap: anywhere;
 }
 
-.service-detail-item > p {
+.verification-detail > p {
   margin: 0;
   color: #444;
   font-size: 13px;
   line-height: 1.7;
-  white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
-.service-detail-item.full-width {
+.verification-detail.full-width {
   grid-column: 1 / -1;
 }
 
-.service-subservices {
+/* MODAL ACTIONS */
+
+.verification-modal-actions {
   display: flex;
+  justify-content: flex-end;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 9px;
+  padding: 16px 27px;
+  border-top: 1px solid #ededed;
 }
 
-.service-subservices span {
-  padding: 7px 11px;
-  color: #333;
-  background: #fff;
-  border: 1px solid #e2e2e2;
-  border-radius: 5px;
+.verification-modal-actions button {
+  min-height: 38px;
+  padding: 8px 15px;
   font-size: 12px;
 }
 
-.service-modal-footer {
+.verification-modal-footer {
   display: flex;
   justify-content: flex-end;
-  padding: 17px 27px;
+  padding: 16px 27px;
   background: #fff;
   border-top: 1px solid #e9e9e9;
 }
 
-.service-modal-close-btn {
-  min-height: 39px;
+.verification-modal-footer button {
+  min-height: 38px;
   padding: 0 22px;
   color: #fff;
   background: #171717;
@@ -572,90 +594,89 @@
   cursor: pointer;
 }
 
-.service-modal-close-btn:hover {
+.verification-modal-footer button:hover {
   background: #3c3c3c;
 }
 
-/* ==============================
-   RESPONSIVE
-============================== */
+/* RESPONSIVE */
 
 @media (max-width: 1100px) {
-  .services-page {
+  .verification-page {
     padding: 30px 24px;
   }
 
-  .services-header h1 {
+  .verification-header h1 {
     font-size: 30px;
   }
 }
 
 @media (max-width: 768px) {
-  .services-page {
+  .verification-page {
     margin-left: 0;
     padding: 24px 16px;
   }
 
-  .services-header {
+  .verification-header {
     align-items: flex-start;
     flex-direction: column;
     gap: 18px;
   }
 
-  .services-header h1 {
+  .verification-header h1 {
     font-size: 28px;
   }
 
-  .services-count {
+  .verification-count {
     width: 100%;
     padding: 15px 18px;
   }
 
-  .services-toolbar {
+  .verification-toolbar {
     align-items: stretch;
     padding: 13px;
   }
 
-  .services-toolbar input,
-  .services-toolbar select,
-  .services-reset-btn {
+  .verification-toolbar input,
+  .verification-toolbar select,
+  .verification-reset-btn {
     width: 100%;
     min-width: 0;
     flex: 1 1 100%;
   }
 
-  .services-pagination {
+  .verification-pagination {
     align-items: flex-start;
     flex-direction: column;
   }
 
-  .service-modal-overlay {
+  .verification-modal-overlay {
     align-items: flex-start;
     padding: 12px;
   }
 
-  .service-modal {
+  .verification-modal {
     max-height: calc(100vh - 24px);
   }
 
-  .service-modal-header,
-  .service-modal-body {
+  .verification-modal-header,
+  .verification-modal-body {
     padding: 20px;
   }
 
-  .service-modal-header h2 {
+  .verification-modal-header h2 {
     font-size: 21px;
   }
 
-  .service-detail-grid {
+  .verification-detail-grid {
     grid-template-columns: 1fr;
   }
 
-  .service-detail-item.full-width {
+  .verification-detail.full-width {
     grid-column: auto;
   }
 
-  .service-modal-footer {
+  .verification-modal-actions,
+  .verification-modal-footer {
     padding: 15px 20px;
   }
 }

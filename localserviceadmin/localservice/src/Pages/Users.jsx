@@ -28,52 +28,74 @@ const [roleFilter, setRoleFilter] = useState("all");
   }, []);
 
  const deleteUser = async (id) => {
-  const result = await Swal.fire({
-    title: "Delete this user?",
-    text: "This action cannot be undone.",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonText: "Yes, delete",
-    cancelButtonText: "Cancel",
-    reverseButtons: true,
-    focusCancel: true,
-    confirmButtonColor: "#dc2626",
-    cancelButtonColor: "#64748b",
-    background: "#ffffff",
-    color: "#1e293b",
-  });
+const result = await Swal.fire({
+title: "Delete this user?",
+text: "This user will be permanently removed. You cannot undo this action.",
+icon: "warning",
+showCancelButton: true,
+confirmButtonText: "Yes, delete",
+cancelButtonText: "Keep User",
+reverseButtons: true,
+focusCancel: true,
+buttonsStyling: false,
+customClass: {
+popup: "servitrust-swal-popup",
+title: "servitrust-swal-title",
+htmlContainer: "servitrust-swal-text",
+confirmButton: "servitrust-swal-delete-btn",
+cancelButton: "servitrust-swal-cancel-btn",
+icon: "servitrust-swal-icon",
+actions: "servitrust-swal-actions",
+},
+});
 
-  if (!result.isConfirmed) return;
+if (!result.isConfirmed) return;
 
-  try {
-    await axios.delete(
-      `https://servitrust-baxkend.onrender.com/users/${id}`
-    );
+try {
+await axios.delete(
+`https://servitrust-baxkend.onrender.com/users/${id}`
+);
 
-    setUsers((prevUsers) =>
-      prevUsers.filter((user) => user._id !== id)
-    );
+setUsers((prevUsers) =>
+  prevUsers.filter((user) => user._id !== id)
+);
 
-    Swal.fire({
-      title: "Deleted!",
-      text: "The user has been deleted successfully.",
-      icon: "success",
-      confirmButtonText: "OK",
-      confirmButtonColor: "#2563eb",
-    });
-  } catch (error) {
-    console.error("DELETE USER ERROR:", error);
+await Swal.fire({
+  title: "User Deleted!",
+  text: "The user has been successfully removed.",
+  icon: "success",
+  confirmButtonText: "Done",
+  buttonsStyling: false,
+  customClass: {
+    popup: "servitrust-swal-popup",
+    title: "servitrust-swal-title",
+    htmlContainer: "servitrust-swal-text",
+    confirmButton: "servitrust-swal-confirm-btn",
+    icon: "servitrust-swal-icon",
+  },
+});
 
-    Swal.fire({
-      title: "Unable to delete",
-      text:
-        error.response?.data?.message ||
-        "Something went wrong. Please try again.",
-      icon: "error",
-      confirmButtonText: "OK",
-      confirmButtonColor: "#2563eb",
-    });
-  }
+} catch (error) {
+console.error("DELETE USER ERROR:", error);
+
+await Swal.fire({
+  title: "Deletion Failed",
+  text:
+    error.response?.data?.message ||
+    "Unable to delete this user. Please try again.",
+  icon: "error",
+  confirmButtonText: "Okay",
+  buttonsStyling: false,
+  customClass: {
+    popup: "servitrust-swal-popup",
+    title: "servitrust-swal-title",
+    htmlContainer: "servitrust-swal-text",
+    confirmButton: "servitrust-swal-confirm-btn",
+    icon: "servitrust-swal-icon",
+  },
+});
+
+}
 };
 
 

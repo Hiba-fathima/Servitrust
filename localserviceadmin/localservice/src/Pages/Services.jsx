@@ -1,821 +1,620 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
+import "../Css/Services.css";
 
-function Services() {
+const API = "https://servitrust-baxkend.onrender.com/services";
+const ITEMS_PER_PAGE = 8;
+
+const Services = () => {
   const [services, setServices] = useState([]);
-  const [showForm, setShowForm] = useState(false);
-
-  const [serviceName, setServiceName] = useState("");
-  const [category, setCategory] = useState("");
-  const [serviceDescription, setServiceDescription] = useState("");
-  const [subService, setSubService] = useState("");
-  const [subServices, setSubServices] = useState([]);
-  const [price, setPrice] = useState("");
-  const [pricingType, setPricingType] = useState("Starting From");
-  const [duration, setDuration] = useState("");
-  const [serviceArea, setServiceArea] = useState("");
-  const [availability, setAvailability] = useState("Available");
-  const [emergencyService, setEmergencyService] = useState("No");
-  const [serviceGuarantee, setServiceGuarantee] = useState("No Warranty");
-  const [status, setStatus] = useState("Active");
-
-  const [image, setImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState("");
-
-  const [editId, setEditId] = useState(null);
-
-
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [availabilityFilter, setAvailabilityFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const servicesPerPage = 3;
-
-  const [searchTerm, setSearchTerm] = useState("");
-
-  const [categories, setCategories] = useState([]);
+  const [selectedService, setSelectedService] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const getServices = async () => {
     try {
-      const response = await axios.get(
-        "https://servitrust-baxkend.onrender.com/services"
-      );
+      setLoading(true);
+      setError("");
 
-      setServices(response.data);
-    } catch (error) {
-      console.log(error);
+      const response = await axios.get(API);
+      const data = Array.isArray(response.data)
+        ? response.data
+        : response.data.services || [];
+
+      setServices(data);
+    } catch (err) {
+      console.error("GET SERVICES ERROR:", err);
+      setError("Unable to load services. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     getServices();
-    fetchCategories();
   }, []);
 
-  const handleImageChange = (e) => {
-    const selectedImage = e.target.files[0];
+  const categories = useMemo(
+    () => [
+      ...new Set(
+        services
+          .map((service) => service.category)
+          .filter(Boolean)
+      ),
+    ],
+    [services]
+  );
 
-    if (selectedImage) {
-      setImage(selectedImage);
-      setImagePreview(URL.createObjectURL(selectedImage));
+  const getServiceName = (service) =>
+    service.name || service.title || "Unnamed Service";
+
+  const getImage = (service) =>
+    service.image ||
+    service.imageUrl ||
+    service.imageURL ||
+    service.serviceImage ||
+    "";
+
+  const getPrice = (service) => {
+    if (
+      service.price === undefined ||
+      service.price === null ||
+      service.price === ""
+    ) {
+      return "Price not set";
     }
+
+    const price = Number(service.price);
+
+    return Number.isNaN(price)
+      ? String(service.price)
+      : `₹${price.toLocaleString("en-IN")}`;
   };
 
-  const addSubService = () => {
-    if (subService.trim() !== "") {
-      setSubServices([
-        ...subServices,
-        subService.trim()
-      ]);
+  const getPricing = (service) => {
+    const price = getPrice(service);
+    const pricingType = service.pricingType || service.priceType || "";
 
-      setSubService("");
+    if (price === "Price not set") {
+      return pricingType || price;
     }
+
+    return pricingType ? `${price} / ${pricingType}` : price;
   };
 
-  const removeSubService = (index) => {
-    const updated = subServices.filter(
-      (_, i) => i !== index
+  const getDuration = (service) => {
+    const duration = service.duration;
+
+    if (
+      duration === undefined ||
+      duration === null ||
+      String(duration).trim() === ""
+    ) {
+      return "Not specified";
+    }
+
+    const value = String(duration).trim();
+
+    if (/\b(hours?|hrs?|minutes?|mins?|days?)\b/i.test(value)) {
+      return value;
+    }
+
+    const numericDuration = Number(value);
+
+    if (!Number.isNaN(numericDuration)) {
+      return `${numericDuration} ${
+        numericDuration === 1 ? "hour" : "hours"
+      }`;
+    }
+
+    return value;
+  };
+
+  const getAvailability = (service) =>
+    service.availability || "Available";
+
+  const getServiceStatus = (service) => service.status || "Active";
+
+  const filteredServices = services.filter((service) => {
+    const searchText = search.toLowerCase();
+
+    const matchesSearch = [
+      getServiceName(service),
+      service.category,
+      service.description,
+      service.serviceArea,
+      service.location,
+      service.pricingType,
+    ].some((value) =>
+      String(value || "").toLowerCase().includes(searchText)
     );
 
-    setSubServices(updated);
-  };
+    const matchesCategory =
+      !categoryFilter || service.category === categoryFilter;
 
-  const resetForm = () => {
-    setServiceName("");
-    setCategory("");
-    setServiceDescription("");
-    setSubService("");
-    setSubServices([]);
-    setPrice("");
-    setPricingType("Starting From");
-    setDuration("");
-    setServiceArea("");
-    setAvailability("Available");
-    setEmergencyService("No");
-    setServiceGuarantee("No Warranty");
-    setStatus("Active");
+    const matchesAvailability =
+      !availabilityFilter ||
+      getAvailability(service).toLowerCase() ===
+        availabilityFilter.toLowerCase();
 
-    setImage(null);
-    setImagePreview("");
-    setEditId(null);
-  };
+    const matchesStatus =
+      !statusFilter ||
+      getServiceStatus(service).toLowerCase() ===
+        statusFilter.toLowerCase();
 
-  const uploadImage = async () => {
-    if (!image) {
-      return "";
-    }
-
-    const formData = new FormData();
-
-    formData.append("file", image);
-    formData.append(
-      "upload_preset",
-      "firstimage"
+    return (
+      matchesSearch &&
+      matchesCategory &&
+      matchesAvailability &&
+      matchesStatus
     );
-
-    try {
-      const response = await axios.post(
-        "https://api.cloudinary.com/v1_1/vt3f7rep/image/upload",
-        formData
-      );
-
-      return response.data.secure_url;
-    } catch (error) {
-      console.log("IMAGE UPLOAD ERROR:", error);
-      throw error;
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    try {
-      let imageUrl = imagePreview;
-
-      if (image) {
-        imageUrl = await uploadImage();
-      }
-
-      const data = {
-        name: serviceName,
-        category: category,
-        description: serviceDescription,
-        subServices: subServices,
-        price: price,
-        pricingType: pricingType,
-        duration: duration,
-        serviceArea: serviceArea,
-        availability: availability,
-        emergencyService: emergencyService,
-        serviceGuarantee: serviceGuarantee,
-        status: status,
-        image: imageUrl
-      };
-
-      if (editId) {
-        await axios.put(
-          `https://servitrust-baxkend.onrender.com/services/${editId}`,
-          data
-        );
-
-        alert("Service updated successfully");
-      } else {
-        await axios.post(
-          "https://servitrust-baxkend.onrender.com/services",
-          data
-        );
-
-        alert("Service added successfully");
-      }
-
-      getServices();
-
-      resetForm();
-      setShowForm(false);
-
-    } catch (error) {
-      console.log(error);
-
-      alert(
-        error.response?.data?.message ||
-        "Something went wrong"
-      );
-    }
-  };
-
-  const editService = (service) => {
-    setEditId(service._id);
-
-    setServiceName(service.name);
-    setCategory(service.category);
-    setServiceDescription(service.description);
-    setSubServices(service.subServices || []);
-    setPrice(service.price);
-    setPricingType(service.pricingType);
-    setDuration(service.duration);
-    setServiceArea(service.serviceArea);
-    setAvailability(service.availability);
-    setEmergencyService(service.emergencyService);
-    setServiceGuarantee(service.serviceGuarantee);
-    setStatus(service.status);
-
-    setImage(null);
-    setImagePreview(service.image || "");
-
-    setShowForm(true);
-  };
-
-  const deleteService = async (id) => {
-    try {
-      const response = await axios.delete(
-        `https://servitrust-baxkend.onrender.com/services/${id}`
-      );
-
-      alert(response.data.message);
-
-      setServices(
-        services.filter(
-          (service) => service._id !== id
-        )
-      );
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-const filteredServices = services.filter((service) => {
-  const search = searchTerm.toLowerCase();
-
-  return (
-    service.name?.toLowerCase().includes(search) ||
-    service.category?.toLowerCase().includes(search)
-  );
-});
-
-  const indexOfLastService = currentPage * servicesPerPage;
-  const indexOfFirstService = indexOfLastService - servicesPerPage;
-
-  const currentServices = filteredServices.slice(
-    indexOfFirstService,
-    indexOfLastService
-  );
+  });
 
   const totalPages = Math.ceil(
-    filteredServices.length / servicesPerPage
+    filteredServices.length / ITEMS_PER_PAGE
   );
 
-  const goToPage = (pageNumber) => {
-    setCurrentPage(pageNumber);
+  const safePage = Math.min(
+    currentPage,
+    Math.max(totalPages, 1)
+  );
+
+  const startIndex = (safePage - 1) * ITEMS_PER_PAGE;
+
+  const currentServices = filteredServices.slice(
+    startIndex,
+    startIndex + ITEMS_PER_PAGE
+  );
+
+  const resetFilters = () => {
+    setSearch("");
+    setCategoryFilter("");
+    setAvailabilityFilter("");
+    setStatusFilter("");
+    setCurrentPage(1);
   };
 
-  const nextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
+  const openView = (service) => {
+    setSelectedService(service);
   };
 
-  const previousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
+  const closeView = () => {
+    setSelectedService(null);
   };
-  const fetchCategories = async () => {
-  try {
-    const response = await axios.get("http://localhost:5000/categories");
 
-    const activeCategories = response.data.filter(
-      (category) => category.status === "Active"
-    );
+  useEffect(() => {
+    if (!selectedService) return;
 
-    setCategories(activeCategories);
-  } catch (error) {
-    console.log("Failed to fetch categories", error);
-  }
-};
+    const handleEscape = (event) => {
+      if (event.key === "Escape") closeView();
+    };
 
-fetchCategories();
+    document.addEventListener("keydown", handleEscape);
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+      document.body.style.overflow = "";
+    };
+  }, [selectedService]);
 
   return (
     <div className="services-page">
-
-      <div className="page-header">
+      {/* PAGE HEADER */}
+      <div className="services-header">
         <div>
+          <p className="services-eyebrow">SERVICE MANAGEMENT</p>
           <h1>Services</h1>
-          <p>Manage local services on ServiTrust</p>
+          <span>
+            Manage services, pricing, availability and service details.
+          </span>
         </div>
 
-        <button
-          className="add-btn"
-          onClick={() => setShowForm(true)}
+        <div className="services-count">
+          <strong>{services.length}</strong>
+          <span>Total Services</span>
+        </div>
+      </div>
+
+      {/* FILTERS */}
+      <div className="services-toolbar">
+        <input
+          type="text"
+          placeholder="Search services, category or location..."
+          value={search}
+          onChange={(event) => {
+            setSearch(event.target.value);
+            setCurrentPage(1);
+          }}
+          aria-label="Search services"
+        />
+
+        <select
+          value={categoryFilter}
+          onChange={(event) => {
+            setCategoryFilter(event.target.value);
+            setCurrentPage(1);
+          }}
+          aria-label="Filter by category"
         >
-          + Add Service
+          <option value="">All Categories</option>
+          {categories.map((category) => (
+            <option key={category} value={category}>
+              {category}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={availabilityFilter}
+          onChange={(event) => {
+            setAvailabilityFilter(event.target.value);
+            setCurrentPage(1);
+          }}
+          aria-label="Filter by availability"
+        >
+          <option value="">All Availability</option>
+          <option value="Available">Available</option>
+          <option value="Unavailable">Unavailable</option>
+        </select>
+
+        <select
+          value={statusFilter}
+          onChange={(event) => {
+            setStatusFilter(event.target.value);
+            setCurrentPage(1);
+          }}
+          aria-label="Filter by status"
+        >
+          <option value="">All Statuses</option>
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
+        </select>
+
+        <button
+          type="button"
+          className="services-reset-btn"
+          onClick={resetFilters}
+        >
+          Reset
         </button>
       </div>
 
-
-
-      <div className="service-search">
-  <input
-    type="text"
-    placeholder="Search services or categories..."
-    value={searchTerm}
-    onChange={(e) => {
-      setSearchTerm(e.target.value);
-      setCurrentPage(1);
-    }}
-  />
-</div>
-
-
-
-      {showForm && (
-        <div className="form-container">
-
-          <h2>
-            {editId
-              ? "Edit Service"
-              : "Add New Service"}
-          </h2>
-
-          <form onSubmit={handleSubmit}>
-
-            <div className="form-grid">
-
-              <div className="input-box">
-                <label>Service Name</label>
-
-                <input
-                  type="text"
-                  value={serviceName}
-                  onChange={(e) =>
-                    setServiceName(e.target.value)
-                  }
-                  placeholder="Example: AC Repair"
-                  required
-                />
-              </div>
-
-              <div className="input-box">
-                <label>Category</label>
-
-                <select
-  value={category}
-  onChange={(e) => setCategory(e.target.value)}
->
-  <option value="">Select Category</option>
-
-  {categories.map((item) => (
-    <option key={item._id} value={item.name}>
-      {item.name}
-    </option>
-  ))}
-</select>
-              </div>
-
-              <div className="input-box">
-                <label>Service Image</label>
-
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                />
-
-                {imagePreview && (
-                  <img
-                    src={imagePreview}
-                    alt="Service Preview"
-                    className="image-preview"
-                  />
-                )}
-              </div>
-
-              <div className="input-box full">
-                <label>Description</label>
-
-                <textarea
-                  value={serviceDescription}
-                  onChange={(e) =>
-                    setServiceDescription(
-                      e.target.value
-                    )
-                  }
-                  placeholder="Describe the service"
-                  required
-                ></textarea>
-              </div>
-
-              <div className="input-box full">
-                <label>Sub Services</label>
-
-                <div className="sub-input">
-
-                  <input
-                    type="text"
-                    value={subService}
-                    onChange={(e) =>
-                      setSubService(e.target.value)
-                    }
-                    placeholder="Example: AC Cleaning"
-                  />
-
-                  <button
-                    type="button"
-                    onClick={addSubService}
-                  >
-                    Add
-                  </button>
-
-                </div>
-
-                <div className="sub-list">
-
-                  {subServices.map(
-                    (item, index) => (
-                      <span
-                        className="sub-tag"
-                        key={index}
-                      >
-                        {item}
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            removeSubService(index)
-                          }
-                        >
-                          ×
-                        </button>
-                      </span>
-                    )
-                  )}
-
-                </div>
-              </div>
-
-              <div className="input-box">
-                <label>Starting Price</label>
-
-                <input
-                  type="number"
-                  value={price}
-                  onChange={(e) =>
-                    setPrice(e.target.value)
-                  }
-                  placeholder="₹ 500"
-                  required
-                />
-              </div>
-
-              <div className="input-box">
-                <label>Pricing Type</label>
-
-                <select
-                  value={pricingType}
-                  onChange={(e) =>
-                    setPricingType(e.target.value)
-                  }
-                >
-                  <option value="Fixed Price">
-                    Fixed Price
-                  </option>
-
-                  <option value="Starting From">
-                    Starting From
-                  </option>
-
-                  <option value="Hourly">
-                    Hourly
-                  </option>
-
-                  <option value="Inspection & Quote">
-                    Inspection & Quote
-                  </option>
-                </select>
-              </div>
-
-              <div className="input-box">
-                <label>Estimated Duration</label>
-
-                <input
-                  type="text"
-                  value={duration}
-                  onChange={(e) =>
-                    setDuration(e.target.value)
-                  }
-                  placeholder="1 - 2 Hours"
-                  required
-                />
-              </div>
-
-              <div className="input-box">
-                <label>Service Area</label>
-
-                <input
-                  type="text"
-                  value={serviceArea}
-                  onChange={(e) =>
-                    setServiceArea(e.target.value)
-                  }
-                  placeholder="Calicut"
-                  required
-                />
-              </div>
-
-              <div className="input-box">
-                <label>Availability</label>
-
-                <select
-                  value={availability}
-                  onChange={(e) =>
-                    setAvailability(e.target.value)
-                  }
-                >
-                  <option value="Available">
-                    Available
-                  </option>
-
-                  <option value="Unavailable">
-                    Unavailable
-                  </option>
-                </select>
-              </div>
-
-              <div className="input-box">
-                <label>Emergency Service</label>
-
-                <select
-                  value={emergencyService}
-                  onChange={(e) =>
-                    setEmergencyService(
-                      e.target.value
-                    )
-                  }
-                >
-                  <option value="Yes">Yes</option>
-                  <option value="No">No</option>
-                </select>
-              </div>
-
-              <div className="input-box">
-                <label>Service Guarantee</label>
-
-                <select
-                  value={serviceGuarantee}
-                  onChange={(e) =>
-                    setServiceGuarantee(
-                      e.target.value
-                    )
-                  }
-                >
-                  <option value="7 Days">
-                    7 Days
-                  </option>
-
-                  <option value="30 Days">
-                    30 Days
-                  </option>
-
-                  <option value="90 Days">
-                    90 Days
-                  </option>
-
-                  <option value="No Warranty">
-                    No Warranty
-                  </option>
-                </select>
-              </div>
-
-              <div className="input-box">
-                <label>Status</label>
-
-                <select
-                  value={status}
-                  onChange={(e) =>
-                    setStatus(e.target.value)
-                  }
-                >
-                  <option value="Active">
-                    Active
-                  </option>
-
-                  <option value="Inactive">
-                    Inactive
-                  </option>
-                </select>
-              </div>
-
-            </div>
-
-            <div className="form-buttons">
-
-              <button
-                type="submit"
-                className="save-btn"
-              >
-                {editId
-                  ? "Update Service"
-                  : "Save Service"}
-              </button>
-
-              <button
-                type="button"
-                className="cancel-btn"
-                onClick={() => {
-                  resetForm();
-                  setShowForm(false);
-                }}
-              >
-                Cancel
-              </button>
-
-            </div>
-
-          </form>
+      {error && (
+        <div className="services-error" role="alert">
+          <span>{error}</span>
+          <button type="button" onClick={getServices}>
+            Retry
+          </button>
         </div>
       )}
 
-      <div className="table-container">
-
-        <table>
-
+      {/* SERVICES TABLE */}
+      <div className="services-table-container">
+        <table className="services-table">
           <thead>
             <tr>
               <th>#</th>
-              <th>Image</th>
-              <th>Service</th>
+              <th>Service Name</th>
               <th>Category</th>
-              <th>Description</th>
-              <th>Sub Services</th>
-              <th>Price</th>
               <th>Pricing</th>
               <th>Duration</th>
-              <th>Area</th>
+              <th>Service Area</th>
               <th>Availability</th>
-              <th>Emergency</th>
-              <th>Guarantee</th>
               <th>Status</th>
               <th>Action</th>
             </tr>
           </thead>
 
           <tbody>
-
-            {services.length === 0 ? (
+            {loading ? (
               <tr>
-                <td
-                  colSpan="15"
-                  className="no-data"
-                >
-                  No services found
+                <td colSpan="9" className="services-empty">
+                  Loading services...
                 </td>
               </tr>
-            ) : (
-              currentServices.map(
-                (service, index) => (
-                  <tr key={service._id}>
+            ) : currentServices.length > 0 ? (
+              currentServices.map((service, index) => (
+                <tr key={service._id || service.id || index}>
+                  <td>{startIndex + index + 1}</td>
 
-                    <td>{indexOfFirstService + index + 1}</td>
-
-                    <td>
-                      {service.image ? (
+                  <td>
+                    <div className="service-name-cell">
+                      {getImage(service) ? (
                         <img
-                          src={service.image}
-                          alt={service.name}
-                          className="service-table-image"
+                          className="service-thumbnail"
+                          src={getImage(service)}
+                          alt={getServiceName(service)}
+                          onError={(event) => {
+                            event.currentTarget.style.display = "none";
+                            event.currentTarget.nextElementSibling.style.display =
+                              "flex";
+                          }}
                         />
-                      ) : (
-                        "No Image"
-                      )}
-                    </td>
+                      ) : null}
 
-                    <td>
-                      <strong>
-                        {service.name}
-                      </strong>
-                    </td>
-
-                    <td>
-                      {service.category}
-                    </td>
-
-                    <td className="description">
-                      {service.description}
-                    </td>
-
-                    <td>
-                      {service.subServices &&
-                        service.subServices.length > 0
-                        ? service.subServices.map(
-                          (
-                            item,
-                            subIndex
-                          ) => (
-                            <span
-                              className="small-tag"
-                              key={subIndex}
-                            >
-                              {item}
-                            </span>
-                          )
-                        )
-                        : "None"}
-                    </td>
-
-                    <td>
-                      ₹{service.price}
-                    </td>
-
-                    <td>
-                      {service.pricingType}
-                    </td>
-
-                    <td>
-                      {service.duration}
-                    </td>
-
-                    <td>
-                      {service.serviceArea}
-                    </td>
-
-                    <td>
-                      <span className="available">
-                        {service.availability}
-                      </span>
-                    </td>
-
-                    <td>
-                      {service.emergencyService}
-                    </td>
-
-                    <td>
-                      {service.serviceGuarantee}
-                    </td>
-
-                    <td>
-                      <span className="active">
-                        {service.status}
-                      </span>
-                    </td>
-
-                    <td>
-
-                      <div className="action-buttons">
-
-                        <button
-                          className="edit-btn"
-                          onClick={() =>
-                            editService(
-                              service
-                            )
-                          }
-                        >
-                          Edit
-                        </button>
-
-                        <button
-                          className="delete-btn"
-                          onClick={() =>
-                            deleteService(
-                              service._id
-                            )
-                          }
-                        >
-                          Delete
-                        </button>
-
+                      <div
+                        className="service-thumbnail-placeholder"
+                        style={{
+                          display: getImage(service) ? "none" : "flex",
+                        }}
+                        aria-hidden="true"
+                      >
+                        {getServiceName(service).charAt(0).toUpperCase()}
                       </div>
 
-                    </td>
+                      <strong>{getServiceName(service)}</strong>
+                    </div>
+                  </td>
 
-                  </tr>
-                )
-              )
+                  <td>{service.category || "Not specified"}</td>
+
+                  <td>
+                    <span className="service-pricing">
+                      {getPricing(service)}
+                    </span>
+                  </td>
+
+                  <td>{getDuration(service)}</td>
+
+                  <td>
+                    {service.serviceArea ||
+                      service.location ||
+                      "Not specified"}
+                  </td>
+
+                  <td>
+                    <span
+                      className={`service-badge availability-${getAvailability(
+                        service
+                      )
+                        .toLowerCase()
+                        .replace(/\s+/g, "-")}`}
+                    >
+                      {getAvailability(service)}
+                    </span>
+                  </td>
+
+                  <td>
+                    <span
+                      className={`service-badge status-${getServiceStatus(
+                        service
+                      ).toLowerCase()}`}
+                    >
+                      {getServiceStatus(service)}
+                    </span>
+                  </td>
+
+                  <td>
+                    <button
+                      type="button"
+                      className="service-view-btn"
+                      onClick={() => openView(service)}
+                    >
+                      View
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="9" className="services-empty">
+                  <strong>No services found</strong>
+                  <span>
+                    Try changing your search or filter selections.
+                  </span>
+                </td>
+              </tr>
             )}
-
           </tbody>
-
         </table>
-        {filteredServices.length > servicesPerPage && (
-          <div className="pagination">
 
-            <button
-              onClick={previousPage}
-              disabled={currentPage === 1}
-            >
-              Previous
-            </button>
+        {/* PAGINATION */}
+        {!loading && filteredServices.length > 0 && (
+          <div className="services-pagination">
+            <span className="services-pagination-info">
+              Showing {startIndex + 1}–
+              {Math.min(
+                startIndex + ITEMS_PER_PAGE,
+                filteredServices.length
+              )}{" "}
+              of {filteredServices.length}
+            </span>
 
-            {Array.from(
-              { length: totalPages },
-              (_, index) => (
+            <div className="services-pagination-buttons">
+              <button
+                type="button"
+                disabled={safePage === 1}
+                onClick={() =>
+                  setCurrentPage((page) => Math.max(1, page - 1))
+                }
+              >
+                Previous
+              </button>
+
+              {Array.from(
+                { length: totalPages },
+                (_, index) => index + 1
+              ).map((page) => (
                 <button
-                  key={index + 1}
-                  onClick={() => goToPage(index + 1)}
+                  type="button"
+                  key={page}
                   className={
-                    currentPage === index + 1
-                      ? "active-page"
-                      : ""
+                    safePage === page ? "active-page" : ""
                   }
+                  onClick={() => setCurrentPage(page)}
                 >
-                  {index + 1}
+                  {page}
                 </button>
-              )
-            )}
+              ))}
 
-            <button
-              onClick={nextPage}
-              disabled={currentPage === totalPages}
-            >
-              Next
-            </button>
-
+              <button
+                type="button"
+                disabled={safePage === totalPages}
+                onClick={() =>
+                  setCurrentPage((page) =>
+                    Math.min(totalPages, page + 1)
+                  )
+                }
+              >
+                Next
+              </button>
+            </div>
           </div>
         )}
-
-
-
       </div>
 
+      {/* VIEW SERVICE MODAL */}
+      {selectedService && (
+        <div
+          className="service-modal-overlay"
+          onClick={closeView}
+        >
+          <div
+            className="service-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="service-modal-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="service-modal-header">
+              <div>
+                <p>SERVICE DETAILS</p>
+                <h2 id="service-modal-title">
+                  {getServiceName(selectedService)}
+                </h2>
+                <span>
+                  ID: {selectedService._id || selectedService.id || "N/A"}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                className="service-modal-close"
+                onClick={closeView}
+                aria-label="Close service details"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="service-modal-body">
+              {getImage(selectedService) && (
+                <div className="service-modal-image-wrap">
+                  <img
+                    src={getImage(selectedService)}
+                    alt={getServiceName(selectedService)}
+                    className="service-modal-image"
+                  />
+                </div>
+              )}
+
+              <div className="service-detail-grid">
+                <div className="service-detail-item">
+                  <span>Service Name</span>
+                  <strong>{getServiceName(selectedService)}</strong>
+                </div>
+
+                <div className="service-detail-item">
+                  <span>Category</span>
+                  <strong>
+                    {selectedService.category || "Not specified"}
+                  </strong>
+                </div>
+
+                <div className="service-detail-item">
+                  <span>Pricing</span>
+                  <strong>{getPricing(selectedService)}</strong>
+                </div>
+
+                <div className="service-detail-item">
+                  <span>Duration</span>
+                  <strong>{getDuration(selectedService)}</strong>
+                </div>
+
+                <div className="service-detail-item">
+                  <span>Service Area</span>
+                  <strong>
+                    {selectedService.serviceArea ||
+                      selectedService.location ||
+                      "Not specified"}
+                  </strong>
+                </div>
+
+                <div className="service-detail-item">
+                  <span>Availability</span>
+                  <strong>{getAvailability(selectedService)}</strong>
+                </div>
+
+                <div className="service-detail-item">
+                  <span>Status</span>
+                  <strong>{getServiceStatus(selectedService)}</strong>
+                </div>
+
+                <div className="service-detail-item">
+                  <span>Emergency Service</span>
+                  <strong>
+                    {selectedService.emergencyService || "Not specified"}
+                  </strong>
+                </div>
+
+                <div className="service-detail-item">
+                  <span>Service Guarantee</span>
+                  <strong>
+                    {selectedService.serviceGuarantee || "Not specified"}
+                  </strong>
+                </div>
+
+                <div className="service-detail-item full-width">
+                  <span>Description</span>
+                  <p>
+                    {selectedService.description ||
+                      "No description provided."}
+                  </p>
+                </div>
+
+                <div className="service-detail-item full-width">
+                  <span>Subservices</span>
+
+                  {Array.isArray(selectedService.subServices) &&
+                  selectedService.subServices.length > 0 ? (
+                    <div className="service-subservices">
+                      {selectedService.subServices.map(
+                        (subservice, index) => (
+                          <span key={`${subservice}-${index}`}>
+                            {typeof subservice === "string"
+                              ? subservice
+                              : subservice.name || "Subservice"}
+                          </span>
+                        )
+                      )}
+                    </div>
+                  ) : (
+                    <p>No subservices added.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="service-modal-footer">
+              <button
+                type="button"
+                className="service-modal-close-btn"
+                onClick={closeView}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+};
 
 export default Services;
