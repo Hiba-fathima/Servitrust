@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import "../Css/User.css"
+import Swal from "sweetalert2";
+import "sweetalert2/dist/sweetalert2.min.css";
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -24,24 +27,54 @@ const [roleFilter, setRoleFilter] = useState("all");
     getUsers();
   }, []);
 
-  const deleteUser = async (id) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this user?"
+ const deleteUser = async (id) => {
+  const result = await Swal.fire({
+    title: "Delete this user?",
+    text: "This action cannot be undone.",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes, delete",
+    cancelButtonText: "Cancel",
+    reverseButtons: true,
+    focusCancel: true,
+    confirmButtonColor: "#dc2626",
+    cancelButtonColor: "#64748b",
+    background: "#ffffff",
+    color: "#1e293b",
+  });
+
+  if (!result.isConfirmed) return;
+
+  try {
+    await axios.delete(
+      `https://servitrust-baxkend.onrender.com/users/${id}`
     );
 
-    if (!confirmDelete) return;
+    setUsers((prevUsers) =>
+      prevUsers.filter((user) => user._id !== id)
+    );
 
-    try {
-      await axios.delete(`https://servitrust-baxkend.onrender.com/users/${id}`);
+    Swal.fire({
+      title: "Deleted!",
+      text: "The user has been deleted successfully.",
+      icon: "success",
+      confirmButtonText: "OK",
+      confirmButtonColor: "#2563eb",
+    });
+  } catch (error) {
+    console.error("DELETE USER ERROR:", error);
 
-      setUsers(users.filter((user) => user._id !== id));
-
-      alert("User deleted successfully");
-    } catch (error) {
-      console.log("DELETE USER ERROR:", error);
-      alert("Failed to delete user");
-    }
-  };
+    Swal.fire({
+      title: "Unable to delete",
+      text:
+        error.response?.data?.message ||
+        "Something went wrong. Please try again.",
+      icon: "error",
+      confirmButtonText: "OK",
+      confirmButtonColor: "#2563eb",
+    });
+  }
+};
 
 
 const filteredUsers = users.filter((user) => {
@@ -118,11 +151,12 @@ const goToPage = (pageNumber) => {
   />
 
   <select
-    value={roleFilter}
-    onChange={(e) => {
-      setRoleFilter(e.target.value);
-      setCurrentPage(1);
-    }}
+className="role-filter"
+value={roleFilter}
+onChange={(e) => {
+setRoleFilter(e.target.value);
+setCurrentPage(1);
+}}
   >
     <option value="all">All Users</option>
     <option value="customer">Customers</option>
@@ -140,7 +174,6 @@ const goToPage = (pageNumber) => {
               <th>#</th>
               <th>User</th>
               <th>Email</th>
-              <th>Phone</th>
               <th>Role</th>
               <th>Action</th>
             </tr>
@@ -168,7 +201,6 @@ const goToPage = (pageNumber) => {
 
                   <td>{user.email}</td>
 
-                  <td>{user.phone || "—"}</td>
 
                   <td>
                     <span className="role-badge">
