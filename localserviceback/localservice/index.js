@@ -111,68 +111,78 @@ app.post("/register", async (req, res) => {
 
 
 
-
 app.post("/login", async (req, res) => {
+try {
+const { email, password } = req.body;
 
-  try {
+// Find user by email
+const user = await User.findOne({ email });
 
-    const { email, password } = req.body;
+if (!user) {
+  return res.status(400).json({
+    message: "User not found",
+  });
+}
 
-    // Find user by email
-    const user = await User.findOne({ email });
+// Compare entered password with hashed password
+const passwordMatch = await bcrypt.compare(
+  password,
+  user.password
+);
 
-    if (!user) {
-      return res.status(400).json({
-        message: "User not found"
-      });
-    }
+if (!passwordMatch) {
+  return res.status(400).json({
+    message: "Invalid password",
+  });
+}
 
-    // Compare entered password with hashed password
-    const passwordMatch = await bcrypt.compare(
-      password,
-      user.password
-    );
+// Check provider account status BEFORE generating JWT
+if (user.role === "provider") {
+  const provider = await Provider.findOne({
+    userId: user._id,
+  });
 
-    if (!passwordMatch) {
-      return res.status(400).json({
-        message: "Invalid password"
-      });
-    }
-
-    // Create JWT token
-    const token = jwt.sign(
-      {
-        id: user._id,
-        role: user.role
-      },
-      "servitrust_secret",
-      {
-        expiresIn: "1d"
-      }
-    );
-
-    res.json({
-      message: "Login successful",
-      token: token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role
-      }
+  if (provider && provider.accountStatus === "Suspended") {
+    return res.status(403).json({
+      message:
+        "Your provider account is suspended. Please contact the administrator.",
     });
-
-  } catch (error) {
-
-    console.log(error);
-
-    res.status(500).json({
-      message: "Login failed"
-    });
-
   }
+}
 
+// Create JWT token only if the account is allowed to log in
+const token = jwt.sign(
+  {
+    id: user._id,
+    role: user.role,
+  },
+  "servitrust_secret",
+  {
+    expiresIn: "1d",
+  }
+);
+
+return res.json({
+  message: "Login successful",
+  token: token,
+  user: {
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+  },
 });
+
+} catch (error) {
+console.error("LOGIN ERROR:", error);
+
+return res.status(500).json({
+  message: "Login failed",
+});
+
+}
+});
+
 
 
 
