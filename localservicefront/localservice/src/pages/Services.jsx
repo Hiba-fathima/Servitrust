@@ -11,7 +11,7 @@ const Services = () => {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const servicesPerPage = 4;
+  const servicesPerPage = 8;
 
   const getServices = async () => {
     try {
