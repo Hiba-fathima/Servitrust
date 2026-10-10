@@ -9,7 +9,7 @@ const Service = require("./models/ServiceModel");
 const Provider = require("./models/ProviderModel");
 const ServiceRequest = require("./models/RequestModel");
 const Category = require("./models/CategoryModel");
-const Complaint = require("../models/Complaint");
+const Complaint = require("./models/ComplaintModel");
 
 
 const app = express();
@@ -1728,256 +1728,261 @@ app.patch("/service-requests/:id/status", async (req, res) => {
 
 // GET ALL COMPLAINTS
 // Optional filters: status, category, search
-router.get("/", async (req, res) => {
-try {
-const { status, category, search } = req.query;
-const filter = {};
-
-if (status && status !== "All") {
-  filter.status = status;
-}
-
-if (category && category !== "All") {
-  filter.category = category;
-}
-
-if (search && search.trim()) {
-  const escapedSearch = search
-    .trim()
-    .replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-  const regex = new RegExp(escapedSearch, "i");
-
-  filter.$or = [
-    { complaintId: regex },
-    { subject: regex },
-    { description: regex },
-    { category: regex },
-  ];
-}
-
-const complaints = await Complaint.find(filter)
-  .populate("customer", "name email phone")
-  .populate("provider", "name email phone")
-  .sort({ createdAt: -1 });
-
-res.status(200).json(complaints);
-
-} catch (error) {
-console.error("Fetch complaints error:", error);
-res.status(500).json({
-message: "Failed to fetch complaints",
-});
-}
-});
-
-// GET ONE COMPLAINT
-router.get("/:id", async (req, res) => {
-try {
-if (!mongoose.isValidObjectId(req.params.id)) {
-return res.status(400).json({
-message: "Invalid complaint ID",
-});
-}
-
-const complaint = await Complaint.findById(req.params.id)
-  .populate("customer", "name email phone")
-  .populate("provider", "name email phone");
-
-if (!complaint) {
-  return res.status(404).json({
-    message: "Complaint not found",
-  });
-}
-
-res.status(200).json(complaint);
-
-} catch (error) {
-console.error("Fetch complaint error:", error);
-res.status(500).json({
-message: "Failed to fetch complaint",
-});
-}
-});
-
-// CREATE COMPLAINT
-router.post("/", async (req, res) => {
-try {
-const {
-customer,
-provider,
-bookingId,
-category,
-subject,
-description,
-} = req.body;
-
-if (!customer || !category || !subject || !description) {
-  return res.status(400).json({
-    message: "Customer, category, subject, and description are required",
-  });
-}
-
-if (!mongoose.isValidObjectId(customer)) {
-  return res.status(400).json({
-    message: "Invalid customer ID",
-  });
-}
-
-if (provider && !mongoose.isValidObjectId(provider)) {
-  return res.status(400).json({
-    message: "Invalid provider ID",
-  });
-}
-
-if (bookingId && !mongoose.isValidObjectId(bookingId)) {
-  return res.status(400).json({
-    message: "Invalid booking ID",
-  });
-}
-
-const complaint = await Complaint.create({
-  customer,
-  provider: provider || null,
-  bookingId: bookingId || null,
-  category,
-  subject,
-  description,
-});
-
-const result = await Complaint.findById(complaint._id)
-  .populate("customer", "name email phone")
-  .populate("provider", "name email phone");
-
-res.status(201).json({
-  message: "Complaint submitted successfully",
-  complaint: result,
-});
-
-} catch (error) {
-console.error("Create complaint error:", error);
-
-if (error.name === "ValidationError") {
-  return res.status(400).json({
-    message: error.message,
-  });
-}
-
-res.status(500).json({
-  message: "Failed to submit complaint",
-});
 
 
-}
-});
 
-// UPDATE COMPLAINT
-router.put("/:id", async (req, res) => {
-try {
-if (!mongoose.isValidObjectId(req.params.id)) {
-return res.status(400).json({
-message: "Invalid complaint ID",
-});
-}
 
-const { status, adminNotes, resolution } = req.body;
-const allowedStatuses = [
-  "Pending",
-  "Under Review",
-  "Resolved",
-  "Closed",
-];
 
-const updates = {};
+// router.get("/", async (req, res) => {
+// try {
+// const { status, category, search } = req.query;
+// const filter = {};
 
-if (status !== undefined) {
-  if (!allowedStatuses.includes(status)) {
-    return res.status(400).json({
-      message: "Invalid complaint status",
-    });
-  }
+// if (status && status !== "All") {
+//   filter.status = status;
+// }
 
-  updates.status = status;
+// if (category && category !== "All") {
+//   filter.category = category;
+// }
 
-  if (status === "Resolved" || status === "Closed") {
-    updates.resolvedAt = new Date();
-  } else {
-    updates.resolvedAt = null;
-  }
-}
+// if (search && search.trim()) {
+//   const escapedSearch = search
+//     .trim()
+//     .replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-if (adminNotes !== undefined) {
-  updates.adminNotes = adminNotes;
-}
+//   const regex = new RegExp(escapedSearch, "i");
 
-if (resolution !== undefined) {
-  updates.resolution = resolution;
-}
+//   filter.$or = [
+//     { complaintId: regex },
+//     { subject: regex },
+//     { description: regex },
+//     { category: regex },
+//   ];
+// }
 
-if (Object.keys(updates).length === 0) {
-  return res.status(400).json({
-    message: "No updates provided",
-  });
-}
+// const complaints = await Complaint.find(filter)
+//   .populate("customer", "name email phone")
+//   .populate("provider", "name email phone")
+//   .sort({ createdAt: -1 });
 
-const complaint = await Complaint.findByIdAndUpdate(
-  req.params.id,
-  { $set: updates },
-  {
-    new: true,
-    runValidators: true,
-  }
-)
-  .populate("customer", "name email phone")
-  .populate("provider", "name email phone");
+// res.status(200).json(complaints);
 
-if (!complaint) {
-  return res.status(404).json({
-    message: "Complaint not found",
-  });
-}
+// } catch (error) {
+// console.error("Fetch complaints error:", error);
+// res.status(500).json({
+// message: "Failed to fetch complaints",
+// });
+// }
+// });
 
-res.status(200).json({
-  message: "Complaint updated successfully",
-  complaint,
-});
+// // GET ONE COMPLAINT
+// router.get("/:id", async (req, res) => {
+// try {
+// if (!mongoose.isValidObjectId(req.params.id)) {
+// return res.status(400).json({
+// message: "Invalid complaint ID",
+// });
+// }
 
-} catch (error) {
-console.error("Update complaint error:", error);
-res.status(500).json({
-message: "Failed to update complaint",
-});
-}
-});
+// const complaint = await Complaint.findById(req.params.id)
+//   .populate("customer", "name email phone")
+//   .populate("provider", "name email phone");
 
-// DELETE COMPLAINT
-router.delete("/:id", async (req, res) => {
-try {
-if (!mongoose.isValidObjectId(req.params.id)) {
-return res.status(400).json({
-message: "Invalid complaint ID",
-});
-}
+// if (!complaint) {
+//   return res.status(404).json({
+//     message: "Complaint not found",
+//   });
+// }
 
-const complaint = await Complaint.findByIdAndDelete(req.params.id);
+// res.status(200).json(complaint);
 
-if (!complaint) {
-  return res.status(404).json({
-    message: "Complaint not found",
-  });
-}
+// } catch (error) {
+// console.error("Fetch complaint error:", error);
+// res.status(500).json({
+// message: "Failed to fetch complaint",
+// });
+// }
+// });
 
-res.status(200).json({
-  message: "Complaint deleted successfully",
-});
+// // CREATE COMPLAINT
+// router.post("/", async (req, res) => {
+// try {
+// const {
+// customer,
+// provider,
+// bookingId,
+// category,
+// subject,
+// description,
+// } = req.body;
 
-} catch (error) {
-console.error("Delete complaint error:", error);
-res.status(500).json({
-message: "Failed to delete complaint",
-});
-}
-});
+// if (!customer || !category || !subject || !description) {
+//   return res.status(400).json({
+//     message: "Customer, category, subject, and description are required",
+//   });
+// }
+
+// if (!mongoose.isValidObjectId(customer)) {
+//   return res.status(400).json({
+//     message: "Invalid customer ID",
+//   });
+// }
+
+// if (provider && !mongoose.isValidObjectId(provider)) {
+//   return res.status(400).json({
+//     message: "Invalid provider ID",
+//   });
+// }
+
+// if (bookingId && !mongoose.isValidObjectId(bookingId)) {
+//   return res.status(400).json({
+//     message: "Invalid booking ID",
+//   });
+// }
+
+// const complaint = await Complaint.create({
+//   customer,
+//   provider: provider || null,
+//   bookingId: bookingId || null,
+//   category,
+//   subject,
+//   description,
+// });
+
+// const result = await Complaint.findById(complaint._id)
+//   .populate("customer", "name email phone")
+//   .populate("provider", "name email phone");
+
+// res.status(201).json({
+//   message: "Complaint submitted successfully",
+//   complaint: result,
+// });
+
+// } catch (error) {
+// console.error("Create complaint error:", error);
+
+// if (error.name === "ValidationError") {
+//   return res.status(400).json({
+//     message: error.message,
+//   });
+// }
+
+// res.status(500).json({
+//   message: "Failed to submit complaint",
+// });
+
+
+// }
+// });
+
+// // UPDATE COMPLAINT
+// router.put("/:id", async (req, res) => {
+// try {
+// if (!mongoose.isValidObjectId(req.params.id)) {
+// return res.status(400).json({
+// message: "Invalid complaint ID",
+// });
+// }
+
+// const { status, adminNotes, resolution } = req.body;
+// const allowedStatuses = [
+//   "Pending",
+//   "Under Review",
+//   "Resolved",
+//   "Closed",
+// ];
+
+// const updates = {};
+
+// if (status !== undefined) {
+//   if (!allowedStatuses.includes(status)) {
+//     return res.status(400).json({
+//       message: "Invalid complaint status",
+//     });
+//   }
+
+//   updates.status = status;
+
+//   if (status === "Resolved" || status === "Closed") {
+//     updates.resolvedAt = new Date();
+//   } else {
+//     updates.resolvedAt = null;
+//   }
+// }
+
+// if (adminNotes !== undefined) {
+//   updates.adminNotes = adminNotes;
+// }
+
+// if (resolution !== undefined) {
+//   updates.resolution = resolution;
+// }
+
+// if (Object.keys(updates).length === 0) {
+//   return res.status(400).json({
+//     message: "No updates provided",
+//   });
+// }
+
+// const complaint = await Complaint.findByIdAndUpdate(
+//   req.params.id,
+//   { $set: updates },
+//   {
+//     new: true,
+//     runValidators: true,
+//   }
+// )
+//   .populate("customer", "name email phone")
+//   .populate("provider", "name email phone");
+
+// if (!complaint) {
+//   return res.status(404).json({
+//     message: "Complaint not found",
+//   });
+// }
+
+// res.status(200).json({
+//   message: "Complaint updated successfully",
+//   complaint,
+// });
+
+// } catch (error) {
+// console.error("Update complaint error:", error);
+// res.status(500).json({
+// message: "Failed to update complaint",
+// });
+// }
+// });
+
+// // DELETE COMPLAINT
+// router.delete("/:id", async (req, res) => {
+// try {
+// if (!mongoose.isValidObjectId(req.params.id)) {
+// return res.status(400).json({
+// message: "Invalid complaint ID",
+// });
+// }
+
+// const complaint = await Complaint.findByIdAndDelete(req.params.id);
+
+// if (!complaint) {
+//   return res.status(404).json({
+//     message: "Complaint not found",
+//   });
+// }
+
+// res.status(200).json({
+//   message: "Complaint deleted successfully",
+// });
+
+// } catch (error) {
+// console.error("Delete complaint error:", error);
+// res.status(500).json({
+// message: "Failed to delete complaint",
+// });
+// }
+// });
 
 // module.exports = router;
 
