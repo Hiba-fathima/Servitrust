@@ -47,9 +47,16 @@ const serviceRequestSchema = new mongoose.Schema({
   },
 
   status: {
-    type: String,
-    default: "Pending"
-  },
+  type: String,
+  enum: [
+    "Pending",
+    "Accepted",
+    "In Progress",
+    "Completed",
+    "Cancelled",
+  ],
+  default: "Pending",
+},
 
   createdAt: {
     type: Date,

@@ -1607,6 +1607,55 @@ app.put("/categories/:id", async (req, res) => {
 });
 
 
+
+// Update service request status
+app.patch("/service-requests/:id/status", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const allowedStatuses = [
+      "Pending",
+      "Accepted",
+      "In Progress",
+      "Completed",
+      "Cancelled",
+    ];
+
+    // Validate status
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        message: "Invalid status",
+      });
+    }
+
+    // Update status in MongoDB
+    const request = await ServiceRequest.findByIdAndUpdate(
+      id,
+      { status: status },
+      { new: true, runValidators: true }
+    );
+
+    if (!request) {
+      return res.status(404).json({
+        message: "Service request not found",
+      });
+    }
+
+    res.status(200).json({
+      message: "Status updated successfully",
+      request,
+    });
+  } catch (error) {
+    console.error("Status update error:", error);
+
+    res.status(500).json({
+      message: "Failed to update status",
+    });
+  }
+});
+
+
 app.listen(5000, () => {
   console.log("Server running on port 5000");
 });
