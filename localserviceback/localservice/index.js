@@ -1176,6 +1176,63 @@ console.log("PROVIDER USER ID:", provider.userId);
 
 
 
+
+
+// SUSPEND OR ACTIVATE PROVIDER
+app.patch("/admin/providers/:id/account-status", async (req, res) => {
+  try {
+    const { accountStatus, suspensionReason } = req.body;
+
+    if (!["Active", "Suspended"].includes(accountStatus)) {
+      return res.status(400).json({
+        message: "Invalid account status",
+      });
+    }
+
+    const provider = await Provider.findById(req.params.id);
+
+    if (!provider) {
+      return res.status(404).json({
+        message: "Provider not found",
+      });
+    }
+
+    provider.accountStatus = accountStatus;
+    provider.suspensionReason =
+      accountStatus === "Suspended"
+        ? (suspensionReason || "").trim()
+        : "";
+
+    provider.suspendedAt =
+      accountStatus === "Suspended" ? new Date() : null;
+
+    await provider.save();
+
+    const user = await User.findById(provider.userId).select(
+      "name email phone"
+    );
+
+    res.json({
+      message: `Provider ${accountStatus.toLowerCase()} successfully`,
+      provider: {
+        ...provider.toObject(),
+        name: user?.name || "",
+        email: user?.email || "",
+        phone: user?.phone || "",
+      },
+    });
+  } catch (error) {
+    console.error("PROVIDER ACCOUNT STATUS ERROR:", error);
+
+    res.status(500).json({
+      message: "Failed to update provider account status",
+      error: error.message,
+    });
+  }
+});
+
+
+
 app.get("/service-requests/provider/:providerId", async (req, res) => {
   try {
     const requests = await ServiceRequest.find({
@@ -1925,113 +1982,115 @@ message: "Failed to delete complaint",
 // module.exports = router;
 
 
-const handleAccountStatusChange = (provider) => {
-  const currentStatus = provider.accountStatus || "Active";
 
-  if (currentStatus === "Suspended") {
-    activateProvider(provider);
-    return;
-  }
 
-  setSuspensionReason("");
-  setSuspendingProvider(provider);
-};
+// const handleAccountStatusChange = (provider) => {
+//   const currentStatus = provider.accountStatus || "Active";
 
-const confirmSuspendProvider = async (event) => {
-  event.preventDefault();
+//   if (currentStatus === "Suspended") {
+//     activateProvider(provider);
+//     return;
+//   }
 
-  if (!suspendingProvider) return;
+//   setSuspensionReason("");
+//   setSuspendingProvider(provider);
+// };
 
-  if (!suspensionReason.trim()) {
-    Swal.fire("Required", "Please enter a suspension reason.", "warning");
-    return;
-  }
+// const confirmSuspendProvider = async (event) => {
+//   event.preventDefault();
 
-  try {
-    setSavingSuspension(true);
+//   if (!suspendingProvider) return;
 
-    const response = await axios.patch(
-      `https://servitrust-baxkend.onrender.com/admin/providers/${suspendingProvider._id}/account-status`,
-      {
-        accountStatus: "Suspended",
-        suspensionReason: suspensionReason.trim(),
-      },
-      {
-        headers: {
-          // Replace this key if your project stores the admin token
-          // under a different localStorage key.
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      }
-    );
+//   if (!suspensionReason.trim()) {
+//     Swal.fire("Required", "Please enter a suspension reason.", "warning");
+//     return;
+//   }
 
-    setProviders((previousProviders) =>
-      previousProviders.map((provider) =>
-        provider._id === suspendingProvider._id
-          ? response.data.provider
-          : provider
-      )
-    );
+//   try {
+//     setSavingSuspension(true);
 
-    setSuspendingProvider(null);
-    setSuspensionReason("");
+//     const response = await axios.patch(
+//       `https://servitrust-baxkend.onrender.com/admin/providers/${suspendingProvider._id}/account-status`,
+//       {
+//         accountStatus: "Suspended",
+//         suspensionReason: suspensionReason.trim(),
+//       },
+//       {
+//         headers: {
+//           // Replace this key if your project stores the admin token
+//           // under a different localStorage key.
+//           Authorization: `Bearer ${localStorage.getItem("token")}`,
+//         },
+//       }
+//     );
 
-    Swal.fire("Suspended", "Provider account suspended.", "success");
-  } catch (error) {
-    console.error(error);
+//     setProviders((previousProviders) =>
+//       previousProviders.map((provider) =>
+//         provider._id === suspendingProvider._id
+//           ? response.data.provider
+//           : provider
+//       )
+//     );
 
-    Swal.fire(
-      "Error",
-      error.response?.data?.message || "Could not suspend provider.",
-      "error"
-    );
-  } finally {
-    setSavingSuspension(false);
-  }
-};
+//     setSuspendingProvider(null);
+//     setSuspensionReason("");
 
-const activateProvider = async (provider) => {
-  const result = await Swal.fire({
-    title: "Activate provider?",
-    text: `Allow ${provider.name} to use their provider account again?`,
-    icon: "question",
-    showCancelButton: true,
-    confirmButtonText: "Yes, activate",
-    cancelButtonText: "Cancel",
-  });
+//     Swal.fire("Suspended", "Provider account suspended.", "success");
+//   } catch (error) {
+//     console.error(error);
 
-  if (!result.isConfirmed) return;
+//     Swal.fire(
+//       "Error",
+//       error.response?.data?.message || "Could not suspend provider.",
+//       "error"
+//     );
+//   } finally {
+//     setSavingSuspension(false);
+//   }
+// };
 
-  try {
-    const response = await axios.patch(
-      `https://servitrust-baxkend.onrender.com/admin/providers/${provider._id}/account-status`,
-      {
-        accountStatus: "Active",
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      }
-    );
+// const activateProvider = async (provider) => {
+//   const result = await Swal.fire({
+//     title: "Activate provider?",
+//     text: `Allow ${provider.name} to use their provider account again?`,
+//     icon: "question",
+//     showCancelButton: true,
+//     confirmButtonText: "Yes, activate",
+//     cancelButtonText: "Cancel",
+//   });
 
-    setProviders((previousProviders) =>
-      previousProviders.map((item) =>
-        item._id === provider._id ? response.data.provider : item
-      )
-    );
+//   if (!result.isConfirmed) return;
 
-    Swal.fire("Activated", "Provider account activated.", "success");
-  } catch (error) {
-    console.error(error);
+//   try {
+//     const response = await axios.patch(
+//       `https://servitrust-baxkend.onrender.com/admin/providers/${provider._id}/account-status`,
+//       {
+//         accountStatus: "Active",
+//       },
+//       {
+//         headers: {
+//           Authorization: `Bearer ${localStorage.getItem("token")}`,
+//         },
+//       }
+//     );
 
-    Swal.fire(
-      "Error",
-      error.response?.data?.message || "Could not activate provider.",
-      "error"
-    );
-  }
-};
+//     setProviders((previousProviders) =>
+//       previousProviders.map((item) =>
+//         item._id === provider._id ? response.data.provider : item
+//       )
+//     );
+
+//     Swal.fire("Activated", "Provider account activated.", "success");
+//   } catch (error) {
+//     console.error(error);
+
+//     Swal.fire(
+//       "Error",
+//       error.response?.data?.message || "Could not activate provider.",
+//       "error"
+//     );
+//   }
+// };
 
 
 
