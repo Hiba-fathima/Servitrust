@@ -66,7 +66,24 @@ const providerSchema = new mongoose.Schema({
   averageRating: {
     type: Number,
     default: 0
-  }
+  },
+  
+  accountStatus: {
+  type: String,
+  enum: ["Active", "Suspended"],
+  default: "Active",
+},
+
+suspensionReason: {
+  type: String,
+  default: "",
+},
+
+suspendedAt: {
+  type: Date,
+  default: null,
+},
+
 
 });
 
