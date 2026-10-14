@@ -12,6 +12,7 @@ const Category = require("./models/CategoryModel");
 const Complaint = require("./models/ComplaintModel");
 const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
+const Notification = require("./models/NotificationModel");
 
 const app = express();
 
@@ -50,7 +51,8 @@ const verifyToken = (req, res, next) => {
       "servitrust_secret"
     );
 
-    req.userId = decoded.id;
+req.userId = decoded.id;
+req.userRole = decoded.role;    
 
     next();
 
@@ -62,6 +64,45 @@ const verifyToken = (req, res, next) => {
 
   }
 };
+
+
+
+
+
+
+// CREATE NOTIFICATION
+const createNotification = async ({
+  recipientId = null,
+  recipientRole,
+  title,
+  message,
+  type,
+  relatedId = "",
+}) => {
+  try {
+    const notification = new Notification({
+      recipientId,
+      recipientRole,
+      title,
+      message,
+      type,
+      relatedId,
+    });
+
+    await notification.save();
+
+    return notification;
+  } catch (error) {
+    console.error(
+      "Notification creation failed:",
+      error.message
+    );
+
+    return null;
+  }
+};
+
+
 
 
 
@@ -651,7 +692,14 @@ app.post("/providers", async (req, res) => {
 
     );
 
-
+// NOTIFY ADMIN ABOUT NEW PROVIDER REGISTRATION
+await createNotification({
+  recipientRole: "admin",
+  title: "New Provider Registration",
+  message: `${name} has registered as a service provider and is awaiting verification.`,
+  type: "provider_registration",
+  relatedId: provider._id.toString(),
+});
     // ==========================================
     // RESPONSE
     // ==========================================
@@ -972,13 +1020,27 @@ if (missingFields.length > 0) {
       description,
       notes
     });
+await request.save();
 
-    await request.save();
+// FIND THE PROVIDER PROFILE
+const provider = await Provider.findById(providerId);
 
-    res.status(201).json({
-      message: "Service request sent successfully",
-      request
-    });
+if (provider) {
+  // NOTIFY THE PROVIDER'S USER ACCOUNT
+  await createNotification({
+    recipientId: provider.userId,
+    recipientRole: "provider",
+    title: "New Service Request",
+    message: `You have received a new ${serviceName} service request.`,
+    type: "new_service_request",
+    relatedId: request._id.toString(),
+  });
+}
+
+res.status(201).json({
+  message: "Service request sent successfully",
+  request
+});
 
   } catch (error) {
     console.log("CREATE SERVICE REQUEST ERROR:", error);
@@ -2247,6 +2309,174 @@ app.patch("/service-requests/:id/status", async (req, res) => {
 // };
 
 
+
+
+// GET NOTIFICATIONS
+app.get("/notifications", verifyToken, async (req, res) => {
+  try {
+    const { userId, userRole } = req;
+
+    if (!["admin", "customer", "provider"].includes(userRole)) {
+      return res.status(403).json({
+        message: "Invalid user role",
+      });
+    }
+
+    let filter;
+
+    if (userRole === "admin") {
+      filter = {
+        recipientRole: "admin",
+        recipientId: null,
+      };
+    } else {
+      filter = {
+        recipientId: userId,
+        recipientRole: userRole,
+      };
+    }
+
+    const notifications = await Notification.find(filter)
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    const unreadCount = await Notification.countDocuments({
+      ...filter,
+      isRead: false,
+    });
+
+    res.json({
+      notifications,
+      unreadCount,
+    });
+  } catch (error) {
+    console.error("Fetch notifications error:", error);
+
+    res.status(500).json({
+      message: "Failed to fetch notifications",
+    });
+  }
+});
+
+
+
+// MARK ONE NOTIFICATION AS READ
+app.patch(
+  "/notifications/:id/read",
+  verifyToken,
+  async (req, res) => {
+    try {
+      const { userId, userRole } = req;
+
+      if (!["admin", "customer", "provider"].includes(userRole)) {
+        return res.status(403).json({
+          message: "Invalid user role",
+        });
+      }
+
+      let filter;
+
+      if (userRole === "admin") {
+        filter = {
+          recipientRole: "admin",
+          recipientId: null,
+        };
+      } else {
+        filter = {
+          recipientId: userId,
+          recipientRole: userRole,
+        };
+      }
+
+      const notification = await Notification.findOneAndUpdate(
+        {
+          _id: req.params.id,
+          ...filter,
+        },
+        {
+          isRead: true,
+          readAt: new Date(),
+        },
+        {
+          new: true,
+        }
+      );
+
+      if (!notification) {
+        return res.status(404).json({
+          message: "Notification not found",
+        });
+      }
+
+      res.json({
+        message: "Notification marked as read",
+        notification,
+      });
+    } catch (error) {
+      console.error("Mark notification read error:", error);
+
+      res.status(500).json({
+        message: "Failed to update notification",
+      });
+    }
+  }
+);
+
+
+
+
+
+// MARK ALL NOTIFICATIONS AS READ
+app.patch(
+  "/notifications/read-all",
+  verifyToken,
+  async (req, res) => {
+    try {
+      const { userId, userRole } = req;
+
+      if (!["admin", "customer", "provider"].includes(userRole)) {
+        return res.status(403).json({
+          message: "Invalid user role",
+        });
+      }
+
+      let filter;
+
+      if (userRole === "admin") {
+        filter = {
+          recipientRole: "admin",
+          recipientId: null,
+        };
+      } else {
+        filter = {
+          recipientId: userId,
+          recipientRole: userRole,
+        };
+      }
+
+      await Notification.updateMany(
+        {
+          ...filter,
+          isRead: false,
+        },
+        {
+          isRead: true,
+          readAt: new Date(),
+        }
+      );
+
+      res.json({
+        message: "All notifications marked as read",
+      });
+    } catch (error) {
+      console.error("Mark all notifications error:", error);
+
+      res.status(500).json({
+        message: "Failed to update notifications",
+      });
+    }
+  }
+);
 
 
 
