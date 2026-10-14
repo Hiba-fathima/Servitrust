@@ -1,18 +1,20 @@
-/* ================================
+/* ========================================
    CATEGORIES PAGE
-================================ */
+======================================== */
 
 .categories-page {
-  padding: 30px 35px 50px;
-  background: #f8f8f8;
-  min-height: calc(100vh - 70px);
+  margin-left: 250px;
+  padding: 40px;
+  background: #f8f8f7;
+  min-height: 100vh;
   box-sizing: border-box;
+  color: #222;
+  font-family: inherit;
 }
 
-
-/* ================================
+/* ========================================
    HEADER
-================================ */
+======================================== */
 
 .categories-header {
   margin-bottom: 25px;
@@ -31,45 +33,62 @@
   font-size: 14px;
 }
 
+/* Support the heading elements in the current JSX */
 
-/* ================================
+.categories-page > h2 {
+  margin: 0 0 8px;
+  font-size: 26px;
+  font-weight: 600;
+  color: #111;
+}
+
+.categories-page > p {
+  margin: 0 0 25px;
+  color: #777;
+  font-size: 14px;
+}
+
+/* ========================================
    FORM SECTION
-================================ */
+======================================== */
 
-.category-form-section {
+.category-form-section,
+.category-form {
   background: #fff;
   border: 1px solid #e5e5e5;
   padding: 25px;
   margin-bottom: 30px;
+  box-sizing: border-box;
 }
 
-.category-form-section h2 {
+.category-form-section h2,
+.category-form h2 {
   margin: 0 0 22px;
   font-size: 19px;
   font-weight: 600;
   color: #111;
 }
 
-
-/* ================================
+/* ========================================
    FORM GRID
-================================ */
+======================================== */
 
 .category-form-grid {
   display: grid;
-  grid-template-columns: 1fr 250px;
+  grid-template-columns: minmax(0, 1fr) 250px;
   gap: 20px;
+  align-items: start;
 }
 
-
-/* ================================
+/* ========================================
    FORM GROUP
-================================ */
+======================================== */
 
 .form-group {
   display: flex;
   flex-direction: column;
   margin-bottom: 18px;
+  min-width: 0;
 }
 
 .form-group label {
@@ -96,12 +115,13 @@
   color: #222;
   background: #fff;
   outline: none;
+  transition: border-color 0.2s ease;
 }
 
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
-  border-color: #111;
+  border-color: #008577;
 }
 
 .form-group textarea {
@@ -109,76 +129,176 @@
   min-height: 100px;
 }
 
+.form-group input[type="file"] {
+  padding: 10px;
+  cursor: pointer;
+  background: #fff;
+}
 
-/* ================================
-   FORM BUTTONS
-================================ */
+.form-group small {
+  color: #777;
+  font-size: 12px;
+  margin-top: 7px;
+  line-height: 1.5;
+}
 
+/* ========================================
+   FORM ACTION BUTTONS
+======================================== */
+
+.category-form-actions,
 .category-form-buttons {
   display: flex;
+  align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
   margin-top: 5px;
 }
 
-.category-form-buttons button {
-  border: none;
+/* Add / Update Category */
+
+.category-submit-btn {
   background: #111;
   color: #fff;
-  padding: 11px 20px;
+  border: 1px solid #111;
+  padding: 11px 22px;
   border-radius: 5px;
   font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  transition: 0.2s ease;
+  min-width: 140px;
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
 
-.category-form-buttons button:hover {
+.category-submit-btn:hover {
   background: #333;
+  border-color: #333;
 }
 
+.category-submit-btn:active {
+  background: #000;
+}
+
+.category-submit-btn:focus-visible {
+  outline: 2px solid #008577;
+  outline-offset: 3px;
+}
+
+.category-submit-btn:disabled {
+  background: #999;
+  border-color: #999;
+  cursor: not-allowed;
+}
+
+/* Cancel Button */
+
+.category-cancel-btn,
 .category-form-buttons .cancel-button {
   background: #eee;
   color: #333;
+  border: 1px solid #eee;
+  padding: 11px 20px;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
 }
 
+.category-cancel-btn:hover,
 .category-form-buttons .cancel-button:hover {
   background: #ddd;
+  border-color: #ddd;
 }
 
+.category-cancel-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
-/* ================================
+/* ========================================
+   IMAGE PREVIEW
+======================================== */
+
+.category-image-preview {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+  margin: 5px 0 22px;
+  padding: 15px;
+  background: #fafafa;
+  border: 1px solid #e8e8e8;
+  border-radius: 5px;
+}
+
+.category-image-preview img {
+  width: 130px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 5px;
+  border: 1px solid #ddd;
+  background: #fff;
+}
+
+.remove-image-btn {
+  background: #fff;
+  color: #c62828;
+  border: 1px solid #e2baba;
+  padding: 9px 14px;
+  border-radius: 5px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.remove-image-btn:hover {
+  background: #fff0f0;
+}
+
+/* ========================================
    TABLE SECTION
-================================ */
+======================================== */
 
-.categories-table-section {
+.categories-table-section,
+.category-table-section {
   background: #fff;
   border: 1px solid #e5e5e5;
   padding: 25px;
+  box-sizing: border-box;
 }
 
-.categories-table-section h2 {
+.categories-table-section h2,
+.category-table-section h3 {
   margin: 0 0 20px;
   font-size: 19px;
   font-weight: 600;
   color: #111;
 }
 
+/* ========================================
+   TABLE WRAPPER
+======================================== */
 
-/* ================================
-   TABLE
-================================ */
-
-.table-wrapper {
+.table-wrapper,
+.category-table-wrapper {
   width: 100%;
   overflow-x: auto;
 }
 
-.table-wrapper table {
+/* ========================================
+   CATEGORY TABLE
+======================================== */
+
+.table-wrapper table,
+.category-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 700px;
+  min-width: 750px;
 }
 
-.table-wrapper th {
+.table-wrapper th,
+.category-table th {
   background: #f5f5f5;
   color: #333;
   font-size: 13px;
@@ -186,9 +306,11 @@
   text-align: left;
   padding: 13px 14px;
   border-bottom: 1px solid #ddd;
+  white-space: nowrap;
 }
 
-.table-wrapper td {
+.table-wrapper td,
+.category-table td {
   padding: 14px;
   font-size: 14px;
   color: #555;
@@ -196,91 +318,141 @@
   vertical-align: middle;
 }
 
-.table-wrapper tbody tr:hover {
+.table-wrapper tbody tr:hover,
+.category-table tbody tr:hover {
   background: #fafafa;
 }
 
-.table-wrapper td strong {
+.table-wrapper td strong,
+.category-table td strong {
   color: #111;
   font-weight: 500;
 }
 
+/* ========================================
+   TABLE IMAGE
+======================================== */
 
-/* ================================
+.category-table-image {
+  display: block;
+  width: 55px;
+  height: 55px;
+  object-fit: cover;
+  border-radius: 5px;
+  border: 1px solid #e5e5e5;
+  background: #fafafa;
+}
+
+.no-category-image {
+  display: inline-block;
+  color: #888;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* ========================================
    STATUS
-================================ */
+======================================== */
 
 .status-active,
-.status-inactive {
+.category-status-active {
   display: inline-block;
   padding: 5px 10px;
   border-radius: 20px;
   font-size: 12px;
   font-weight: 500;
-}
-
-.status-active {
   background: #e9f7ef;
   color: #18864b;
+  white-space: nowrap;
 }
 
-.status-inactive {
+.status-inactive,
+.category-status-inactive {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
   background: #f3f3f3;
   color: #777;
+  white-space: nowrap;
 }
 
-
-/* ================================
+/* ========================================
    ACTION BUTTONS
-================================ */
+======================================== */
+
+.category-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
 
 .edit-button,
-.delete-button {
+.delete-button,
+.category-edit-btn,
+.category-delete-btn {
   border: none;
-  padding: 7px 13px;
+  padding: 8px 13px;
   border-radius: 4px;
   font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
-  margin-right: 7px;
+  transition: background 0.2s ease;
+  white-space: nowrap;
 }
 
-.edit-button {
+.edit-button,
+.category-edit-btn {
   background: #f1f1f1;
   color: #222;
 }
 
-.edit-button:hover {
+.edit-button:hover,
+.category-edit-btn:hover {
   background: #ddd;
 }
 
-.delete-button {
+.delete-button,
+.category-delete-btn {
   background: #fff0f0;
-  color: #d33;
+  color: #c62828;
 }
 
-.delete-button:hover {
+.delete-button:hover,
+.category-delete-btn:hover {
   background: #ffe0e0;
 }
 
-
-/* ================================
+/* ========================================
    NO DATA
-================================ */
+======================================== */
 
-.no-data {
+.no-data,
+.empty-category {
   text-align: center;
   padding: 35px !important;
   color: #888 !important;
 }
 
+/* ========================================
+   RESPONSIVE DESIGN
+======================================== */
 
-/* ================================
-   RESPONSIVE
-================================ */
+@media (max-width: 1024px) {
+  .categories-page {
+    padding: 30px;
+  }
+
+  .category-form-grid {
+    grid-template-columns: minmax(0, 1fr) 220px;
+  }
+}
 
 @media (max-width: 768px) {
-
   .categories-page {
+    margin-left: 0;
     padding: 20px;
   }
 
@@ -290,20 +462,42 @@
   }
 
   .category-form-section,
-  .categories-table-section {
+  .category-form,
+  .categories-table-section,
+  .category-table-section {
     padding: 18px;
   }
 
-  .categories-header h1 {
+  .categories-header h1,
+  .categories-page > h2 {
     font-size: 24px;
   }
 
+  .category-form-actions,
+  .category-form-buttons {
+    align-items: stretch;
+  }
+
+  .category-submit-btn,
+  .category-cancel-btn {
+    min-width: 0;
+  }
 }
 
-.categories-page {
-  margin-left: 250px;
-  padding: 40px;
-  background: #f8f8f7;
-  min-height: 100vh;
-  box-sizing: border-box;
+@media (max-width: 480px) {
+  .categories-page {
+    padding: 15px;
+  }
+
+  .category-form-section,
+  .category-form,
+  .categories-table-section,
+  .category-table-section {
+    padding: 14px;
+  }
+
+  .category-image-preview img {
+    width: 100px;
+    height: 80px;
+  }
 }
