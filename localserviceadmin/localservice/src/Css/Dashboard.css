@@ -1,0 +1,20 @@
+.admin-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.admin-topbar h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #203c42;
+}
+
+.admin-topbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}

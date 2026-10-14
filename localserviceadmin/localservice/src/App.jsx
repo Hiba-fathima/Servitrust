@@ -13,6 +13,8 @@ import Verification from './Pages/Verification'
 import Requests from './Pages/Requests'
 import Categories from './Pages/Categories'
 import Complaints from './Pages/Complaint'
+import NotificationBell from './Pages/NotificationBell'
+import Notifications from './Pages/Notification'
 
 
 function App() {
@@ -36,7 +38,12 @@ function App() {
 
 <Route path="/categories" element={<Categories />} />
 <Route path="/admin/complaints" element={<Complaints />} />
-
+<Route
+  path="/notifications"
+  element={<NotificationBell />}
+  
+/>
+<Route path="/notifications" element={<Notifications />} />
       </Routes>
     </>
   )
