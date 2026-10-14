@@ -18,6 +18,18 @@ const categorySchema = new mongoose.Schema(
     status: {
       type: String,
       default: "Active"
+    },
+
+    // Optional category image
+    image: {
+      type: String,
+      default: ""
+    },
+
+    // Used to replace or delete the Cloudinary image
+    imagePublicId: {
+      type: String,
+      default: ""
     }
   },
   {

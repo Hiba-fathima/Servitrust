@@ -10,7 +10,8 @@ const Provider = require("./models/ProviderModel");
 const ServiceRequest = require("./models/RequestModel");
 const Category = require("./models/CategoryModel");
 const Complaint = require("./models/ComplaintModel");
-
+const multer = require("multer");
+const cloudinary = require("cloudinary").v2;
 
 const app = express();
 
@@ -1545,114 +1546,246 @@ app.put("/providers/:id", async (req, res) => {
 
 
 
+
+
+
+
+// Cloudinary configuration
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+// Keep uploaded image in memory before sending it to Cloudinary
+const storage = multer.memoryStorage();
+
+const uploadCategoryImage = multer({
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // Maximum 5 MB
+  },
+  fileFilter: (req, file, callback) => {
+    if (file.mimetype && file.mimetype.startsWith("image/")) {
+      callback(null, true);
+    } else {
+      callback(new Error("Please upload a valid image."));
+    }
+  }
+});
+
+// Upload an image buffer to Cloudinary
+const uploadToCloudinary = (buffer) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: "servitrust/categories",
+        resource_type: "image"
+      },
+      (error, result) => {
+        if (error) {
+          return reject(error);
+        }
+
+        resolve(result);
+      }
+    );
+
+    stream.end(buffer);
+  });
+};
+
+
+
+
+
+// GET: Fetch all categories
 app.get("/categories", async (req, res) => {
   try {
     const categories = await Category.find().sort({ createdAt: -1 });
 
-    res.json(categories);
-
+    res.status(200).json(categories);
   } catch (error) {
-    console.log("GET CATEGORIES ERROR:", error);
+    console.error("Fetch categories error:", error);
 
     res.status(500).json({
-      message: "Failed to get categories",
-      error: error.message
+      message: "Failed to fetch categories"
     });
   }
 });
 
 
-app.post("/categories", async (req, res) => {
-  try {
-    const { name, description } = req.body;
+// POST: Add a category with an optional image
+app.post(
+  "/categories",
+  uploadCategoryImage.single("image"),
+  async (req, res) => {
+    try {
+      const { name, description, status } = req.body;
 
-    if (!name || !description) {
-      return res.status(400).json({
-        message: "Please fill all required fields"
+      if (!name || !name.trim() || !description || !description.trim()) {
+        return res.status(400).json({
+          message: "Category name and description are required"
+        });
+      }
+
+      const existingCategory = await Category.findOne({
+        name: name.trim()
       });
-    }
 
-    const existingCategory = await Category.findOne({
-      name: name.trim()
-    });
+      if (existingCategory) {
+        return res.status(400).json({
+          message: "This category already exists"
+        });
+      }
 
-    if (existingCategory) {
-      return res.status(400).json({
-        message: "Category already exists"
-      });
-    }
+      let image = "";
+      let imagePublicId = "";
 
-    const category = new Category({
-      name: name.trim(),
-      description: description.trim(),
-      status: "Active"
-    });
+      // Image is optional
+      if (req.file) {
+        const uploadedImage = await uploadToCloudinary(req.file.buffer);
 
-    await category.save();
+        image = uploadedImage.secure_url;
+        imagePublicId = uploadedImage.public_id;
+      }
 
-    res.status(201).json({
-      message: "Category added successfully",
-      category
-    });
-
-  } catch (error) {
-    console.log("ADD CATEGORY ERROR:", error);
-
-    res.status(500).json({
-      message: "Failed to add category",
-      error: error.message
-    });
-  }
-});
-
-app.delete("/categories/:id", async (req, res) => {
-  try {
-    const category = await Category.findByIdAndDelete(
-      req.params.id
-    );
-
-    if (!category) {
-      return res.status(404).json({
-        message: "Category not found"
-      });
-    }
-
-    res.json({
-      message: "Category deleted successfully"
-    });
-
-  } catch (error) {
-    console.log("DELETE CATEGORY ERROR:", error);
-
-    res.status(500).json({
-      message: "Failed to delete category",
-      error: error.message
-    });
-  }
-});
-
-app.put("/categories/:id", async (req, res) => {
-  try {
-    const { name, description, status } = req.body;
-
-    if (!name || !description) {
-      return res.status(400).json({
-        message: "Please fill all required fields"
-      });
-    }
-
-    const category = await Category.findByIdAndUpdate(
-      req.params.id,
-      {
+      const category = await Category.create({
         name: name.trim(),
         description: description.trim(),
-        status: status || "Active"
-      },
-      {
-        new: true,
-        runValidators: true
+        status: status || "Active",
+        image,
+        imagePublicId
+      });
+
+      res.status(201).json({
+        message: "Category added successfully",
+        category
+      });
+    } catch (error) {
+      console.error("Add category error:", error);
+
+      if (error.code === 11000) {
+        return res.status(400).json({
+          message: "This category already exists"
+        });
       }
-    );
+
+      res.status(500).json({
+        message: "Failed to add category"
+      });
+    }
+  }
+);
+
+
+// PUT: Update a category and optionally replace/remove its image
+app.put(
+  "/categories/:id",
+  uploadCategoryImage.single("image"),
+  async (req, res) => {
+    try {
+      const { name, description, status, removeImage } = req.body;
+
+      const category = await Category.findById(req.params.id);
+
+      if (!category) {
+        return res.status(404).json({
+          message: "Category not found"
+        });
+      }
+
+      if (name !== undefined && !name.trim()) {
+        return res.status(400).json({
+          message: "Category name is required"
+        });
+      }
+
+      if (description !== undefined && !description.trim()) {
+        return res.status(400).json({
+          message: "Category description is required"
+        });
+      }
+
+      // Check whether another category already uses this name
+      if (name !== undefined && name.trim() !== category.name) {
+        const duplicate = await Category.findOne({
+          name: name.trim(),
+          _id: { $ne: category._id }
+        });
+
+        if (duplicate) {
+          return res.status(400).json({
+            message: "This category name already exists"
+          });
+        }
+      }
+
+      // Replace the existing image when a new one is uploaded
+      if (req.file) {
+        const uploadedImage = await uploadToCloudinary(req.file.buffer);
+
+        // Delete the previous Cloudinary image after successful upload
+        if (category.imagePublicId) {
+          try {
+            await cloudinary.uploader.destroy(category.imagePublicId);
+          } catch (imageError) {
+            console.error("Old image deletion error:", imageError);
+          }
+        }
+
+        category.image = uploadedImage.secure_url;
+        category.imagePublicId = uploadedImage.public_id;
+      } else if (removeImage === "true") {
+        // Remove the existing image when requested
+        if (category.imagePublicId) {
+          try {
+            await cloudinary.uploader.destroy(category.imagePublicId);
+          } catch (imageError) {
+            console.error("Image deletion error:", imageError);
+          }
+        }
+
+        category.image = "";
+        category.imagePublicId = "";
+      }
+
+      // Update the remaining fields
+      if (name !== undefined) category.name = name.trim();
+
+      if (description !== undefined) {
+        category.description = description.trim();
+      }
+
+      if (status !== undefined) category.status = status;
+
+      await category.save();
+
+      res.status(200).json({
+        message: "Category updated successfully",
+        category
+      });
+    } catch (error) {
+      console.error("Update category error:", error);
+
+      if (error.code === 11000) {
+        return res.status(400).json({
+          message: "This category name already exists"
+        });
+      }
+
+      res.status(500).json({
+        message: "Failed to update category"
+      });
+    }
+  }
+);
+
+
+// DELETE: Delete a category and its Cloudinary image
+app.delete("/categories/:id", async (req, res) => {
+  try {
+    const category = await Category.findById(req.params.id);
 
     if (!category) {
       return res.status(404).json({
@@ -1660,21 +1793,27 @@ app.put("/categories/:id", async (req, res) => {
       });
     }
 
-    res.json({
-      message: "Category updated successfully",
-      category
-    });
+    if (category.imagePublicId) {
+      try {
+        await cloudinary.uploader.destroy(category.imagePublicId);
+      } catch (imageError) {
+        console.error("Cloudinary image deletion error:", imageError);
+      }
+    }
 
+    await Category.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({
+      message: "Category deleted successfully"
+    });
   } catch (error) {
-    console.log("UPDATE CATEGORY ERROR:", error);
+    console.error("Delete category error:", error);
 
     res.status(500).json({
-      message: "Failed to update category",
-      error: error.message
+      message: "Failed to delete category"
     });
   }
 });
-
 
 
 // Update service request status
