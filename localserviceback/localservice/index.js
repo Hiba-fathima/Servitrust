@@ -586,15 +586,13 @@ app.delete("/users/:id", async (req, res) => {
 
 
 
+
+
+
+
 app.post("/providers", async (req, res) => {
-
   try {
-
-    console.log(
-      "PROVIDER REQUEST:",
-      req.body
-    );
-
+    console.log("PROVIDER REQUEST:", req.body);
 
     const {
       userId,
@@ -605,204 +603,102 @@ app.post("/providers", async (req, res) => {
       location,
       experience,
       description,
-      availability
+      availability,
     } = req.body;
-
 
     // ==========================================
     // VALIDATION
     // ==========================================
 
-    const missingFields = [];
-
-
-    if (!userId) {
-      missingFields.push("userId");
-    }
-
-
-    if (!name) {
-      missingFields.push("name");
-    }
-
-
-    if (!phone) {
-      missingFields.push("phone");
-    }
-
-
-    if (
-      !Array.isArray(category) ||
-      category.length === 0
-    ) {
-      missingFields.push("category");
-    }
-
-
-    if (
-      !Array.isArray(services) ||
-      services.length === 0
-    ) {
-      missingFields.push("services");
-    }
-
-
-    if (!location) {
-      missingFields.push("location");
-    }
-
-
-    if (!experience) {
-      missingFields.push("experience");
-    }
-
-
-    if (!description) {
-      missingFields.push("description");
-    }
-
-
-    if (missingFields.length > 0) {
-
+    if (!userId || !name || !phone) {
       return res.status(400).json({
-
-        message:
-          "Please fill all required fields",
-
-        missingFields
-
+        message: "User ID, name and phone are required",
       });
-
     }
-
 
     // ==========================================
     // CHECK EXISTING PROVIDER
     // ==========================================
 
-    const existingProvider =
-      await Provider.findOne({
-        userId
+    let provider = await Provider.findOne({ userId });
+    const isNewProvider = !provider;
+
+    if (provider) {
+      // UPDATE EXISTING PROVIDER PROFILE
+      provider.category = Array.isArray(category) ? category : [];
+      provider.services = Array.isArray(services) ? services : [];
+      provider.location = location || "";
+      provider.experience = experience || "";
+      provider.description = description || "";
+      provider.availability = availability || "Available";
+    } else {
+      // CREATE PROVIDER IF NO RECORD EXISTS
+      provider = new Provider({
+        userId,
+        category: Array.isArray(category) ? category : [],
+        services: Array.isArray(services) ? services : [],
+        location: location || "",
+        experience: experience || "",
+        description: description || "",
+        availability: availability || "Available",
+        verificationStatus: "Pending",
+        reliabilityScore: 0,
+        completedServices: 0,
+        cancelledServices: 0,
+        complaints: 0,
+        averageRating: 0,
       });
-
-
-    if (existingProvider) {
-
-      return res.status(400).json({
-
-        message:
-          "Provider profile already exists"
-
-      });
-
     }
 
+    // Keep the existing verification status.
+    if (!provider.verificationStatus) {
+      provider.verificationStatus = "Pending";
+    }
+
+    await provider.save({ validateBeforeSave: false });
 
     // ==========================================
-    // CREATE PROVIDER
+    // UPDATE USER NAME AND PHONE
     // ==========================================
 
-    const provider =
-      new Provider({
+    await User.findByIdAndUpdate(userId, {
+      name,
+      phone,
+    });
 
-        userId,
+    // ==========================================
+    // NOTIFY ADMIN ONLY FOR NEW PROVIDERS
+    // ==========================================
 
-        category,
-
-        services,
-
-        location,
-
-        experience,
-
-        description,
-
-        availability:
-          availability || "Available",
-
-        verificationStatus:
-          "Pending",
-
-        reliabilityScore:
-          0,
-
-        completedServices:
-          0,
-
-        cancelledServices:
-          0,
-
-        complaints:
-          0,
-
-        averageRating:
-          0
-
+    if (isNewProvider) {
+      await createNotification({
+        recipientRole: "admin",
+        title: "New Provider Registration",
+        message: `${name} has registered as a service provider and is awaiting verification.`,
+        type: "provider_registration",
+        relatedId: provider._id.toString(),
       });
+    }
 
-
-    await provider.save();
-
-
-    // ==========================================
-    // UPDATE USER NAME + PHONE
-    // ==========================================
-
-    await User.findByIdAndUpdate(
-
-      userId,
-
-      {
-        name,
-        phone
-      }
-
-    );
-
-// NOTIFY ADMIN ABOUT NEW PROVIDER REGISTRATION
-await createNotification({
-  recipientRole: "admin",
-  title: "New Provider Registration",
-  message: `${name} has registered as a service provider and is awaiting verification.`,
-  type: "provider_registration",
-  relatedId: provider._id.toString(),
-});
     // ==========================================
     // RESPONSE
     // ==========================================
 
-    res.status(201).json({
-
-      message:
-        "Provider profile created successfully",
-
-      provider
-
+    res.status(isNewProvider ? 201 : 200).json({
+      message: isNewProvider
+        ? "Provider profile created successfully"
+        : "Provider profile updated successfully",
+      provider,
     });
-
-
   } catch (error) {
-
-    console.log(
-      "CREATE PROVIDER ERROR:",
-      error
-    );
-
+    console.error("CREATE/UPDATE PROVIDER ERROR:", error);
 
     res.status(500).json({
-
-      message:
-        "Failed to create provider profile",
-
-      error:
-        error.message
-
+      message: "Failed to save provider profile",
+      error: error.message,
     });
-
   }
-
 });
-
 
 
 
@@ -2001,7 +1897,23 @@ app.patch("/service-requests/:id/status", async (req, res) => {
 
 
 
+// GET ALL COMPLAINTS
+app.get("/complaints", async (req, res) => {
+  try {
+    const complaints = await Complaint.find().sort({
+      createdAt: -1,
+    });
 
+    res.status(200).json(complaints);
+  } catch (error) {
+    console.error("Fetch complaints error:", error);
+
+    res.status(500).json({
+      message: "Failed to fetch complaints",
+      error: error.message,
+    });
+  }
+});
 
 
 // const express = require("express");
