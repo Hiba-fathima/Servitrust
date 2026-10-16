@@ -755,7 +755,6 @@ app.get("/providers", async (req, res) => {
 
 
 
-
 app.get("/providers/:id", async (req, res) => {
   try {
     const provider = await Provider.findById(req.params.id);
@@ -768,7 +767,7 @@ app.get("/providers/:id", async (req, res) => {
 
     const user = await User.findById(provider.userId);
 
-    return res.json({
+    res.json({
       ...provider.toObject(),
       name: user?.name || "",
       phone: user?.phone || "",
@@ -776,17 +775,14 @@ app.get("/providers/:id", async (req, res) => {
     });
 
   } catch (error) {
-    console.error("GET PROVIDER ERROR:", error);
+    console.log("GET PROVIDER ERROR:", error);
 
-    return res.status(500).json({
+    res.status(500).json({
       message: "Failed to get provider",
       error: error.message
     });
   }
 });
-
-
-
 
 
 
