@@ -2127,16 +2127,22 @@ app.patch(
 
 
 
-// GET ALL COMPLAINTS
 app.get("/complaints", async (req, res) => {
   try {
-    const complaints = await Complaint.find().sort({
-      createdAt: -1,
-    });
+    const complaints = await Complaint.find()
+      .populate("customer", "name email")
+      .populate({
+        path: "provider",
+        populate: {
+          path: "userId",
+          select: "name email",
+        },
+      })
+      .sort({ createdAt: -1 });
 
     res.status(200).json(complaints);
   } catch (error) {
-    console.error("Fetch complaints error:", error);
+    console.error("FETCH COMPLAINTS ERROR:", error);
 
     res.status(500).json({
       message: "Failed to fetch complaints",
@@ -2296,6 +2302,74 @@ app.post("/complaints", verifyToken, async (req, res) => {
     });
   }
 });
+
+
+
+app.put("/complaints/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, adminNotes, resolution } = req.body;
+
+    const allowedStatuses = [
+      "Pending",
+      "Under Review",
+      "Resolved",
+      "Closed",
+    ];
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "Invalid complaint ID",
+      });
+    }
+
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        message: "Invalid complaint status",
+      });
+    }
+
+    const complaint = await Complaint.findByIdAndUpdate(
+      id,
+      {
+        status,
+        adminNotes: adminNotes || "",
+        resolution: resolution || "",
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    )
+      .populate("customer", "name email")
+      .populate({
+        path: "provider",
+        populate: {
+          path: "userId",
+          select: "name email",
+        },
+      });
+
+    if (!complaint) {
+      return res.status(404).json({
+        message: "Complaint not found",
+      });
+    }
+
+    res.status(200).json({
+      message: "Complaint updated successfully",
+      complaint,
+    });
+  } catch (error) {
+    console.error("UPDATE COMPLAINT ERROR:", error);
+
+    res.status(500).json({
+      message: "Failed to update complaint",
+      error: error.message,
+    });
+  }
+});
+
 
 // const express = require("express");
 // const mongoose = require("mongoose");
