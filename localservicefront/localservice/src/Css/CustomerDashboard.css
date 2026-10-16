@@ -888,3 +888,194 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+
+
+
+
+
+/* Request action buttons */
+.request-action-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.raise-complaint-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 10px 15px;
+  border: 1px solid #0f766e;
+  border-radius: 8px;
+  background: #fff;
+  color: #0f766e;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.raise-complaint-button:hover {
+  background: #0f766e;
+  color: #fff;
+}
+
+/* Complaint modal */
+.complaint-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+  background: rgba(15, 23, 42, 0.58);
+}
+
+.complaint-modal {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 540px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 26px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.complaint-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.complaint-modal-header h2 {
+  margin: 8px 0;
+  color: #163b3b;
+  font-size: 24px;
+}
+
+.complaint-modal-header p {
+  margin: 5px 0;
+  color: #64748b;
+  overflow-wrap: anywhere;
+}
+
+.complaint-request-id {
+  font-size: 12px;
+}
+
+.complaint-modal-close {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #334155;
+  cursor: pointer;
+}
+
+.complaint-modal form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.complaint-modal label {
+  margin-top: 8px;
+  color: #334155;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.complaint-modal input,
+.complaint-modal select,
+.complaint-modal textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #1e293b;
+  font: inherit;
+}
+
+.complaint-modal textarea {
+  resize: vertical;
+}
+
+.complaint-modal input:focus,
+.complaint-modal select:focus,
+.complaint-modal textarea:focus {
+  outline: 2px solid #99f6e4;
+  border-color: #0f766e;
+}
+
+.complaint-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.complaint-cancel-button,
+.complaint-submit-button {
+  min-height: 42px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.complaint-cancel-button {
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #334155;
+}
+
+.complaint-submit-button {
+  border: 1px solid #0f766e;
+  background: #0f766e;
+  color: #fff;
+}
+
+.complaint-cancel-button:disabled,
+.complaint-submit-button:disabled,
+.complaint-modal-close:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+  .request-action-buttons {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .complaint-modal {
+    padding: 18px;
+  }
+
+  .complaint-modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .complaint-modal-actions button {
+    width: 100%;
+  }
+}

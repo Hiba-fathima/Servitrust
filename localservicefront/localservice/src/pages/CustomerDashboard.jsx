@@ -1,6 +1,18 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import axios from "axios";
-import { FaBell, FaCheck, FaCheckDouble, FaTimes } from "react-icons/fa";
+import {
+  FaBell,
+  FaCheck,
+  FaCheckDouble,
+  FaTimes,
+  FaExclamationCircle,
+} from "react-icons/fa";
 import "../Css/CustomerDashboard.css";
 
 const API = "https://servitrust-baxkend.onrender.com";
@@ -15,6 +27,15 @@ const CustomerDashboard = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [showNotifications, setShowNotifications] = useState(false);
+
+  // Complaint states
+  const [showComplaintForm, setShowComplaintForm] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [complaintCategory, setComplaintCategory] =
+    useState("Service Quality");
+  const [complaintSubject, setComplaintSubject] = useState("");
+  const [complaintDescription, setComplaintDescription] = useState("");
+  const [complaintLoading, setComplaintLoading] = useState(false);
 
   const notificationRef = useRef(null);
   const token = localStorage.getItem("token");
@@ -71,9 +92,11 @@ const CustomerDashboard = () => {
           ? response.data
           : response.data?.requests || []
       );
+
       setError("");
     } catch (err) {
       console.error("Error loading service requests:", err);
+
       setError(
         err.response?.data?.message ||
           "Unable to load your service requests."
@@ -83,40 +106,40 @@ const CustomerDashboard = () => {
     }
   }, [token, customerId, authHeaders]);
 
-  // Load notifications from the existing backend route
-  const getNotifications = useCallback(async (showLoader = false) => {
-    if (!token) return;
+  // Load notifications
+  const getNotifications = useCallback(
+    async (showLoader = false) => {
+      if (!token) return;
 
-    if (showLoader) {
-      setNotificationLoading(true);
-    }
-
-    try {
-      const response = await axios.get(`${API}/notifications`, {
-        headers: authHeaders,
-      });
-
-      // Backend response format:
-      // { notifications: [...], unreadCount: number }
-      const notificationList = Array.isArray(response.data)
-        ? response.data
-        : response.data?.notifications || [];
-
-      setNotifications(notificationList);
-    } catch (err) {
-      console.error("Error loading notifications:", err);
-    } finally {
       if (showLoader) {
-        setNotificationLoading(false);
+        setNotificationLoading(true);
       }
-    }
-  }, [token, authHeaders]);
+
+      try {
+        const response = await axios.get(`${API}/notifications`, {
+          headers: authHeaders,
+        });
+
+        const notificationList = Array.isArray(response.data)
+          ? response.data
+          : response.data?.notifications || [];
+
+        setNotifications(notificationList);
+      } catch (err) {
+        console.error("Error loading notifications:", err);
+      } finally {
+        if (showLoader) {
+          setNotificationLoading(false);
+        }
+      }
+    },
+    [token, authHeaders]
+  );
 
   useEffect(() => {
     getRequests();
     getNotifications();
 
-    // Refresh requests and notifications every 30 seconds
     const interval = setInterval(() => {
       getRequests();
       getNotifications();
@@ -125,7 +148,7 @@ const CustomerDashboard = () => {
     return () => clearInterval(interval);
   }, [getRequests, getNotifications]);
 
-  // Close notification dropdown when clicking outside it
+  // Close notification dropdown when clicking outside
   useEffect(() => {
     const handleOutsideClick = (event) => {
       if (
@@ -158,27 +181,34 @@ const CustomerDashboard = () => {
     const days = Math.floor(hours / 24);
 
     if (seconds < 60) return "Just now";
+
     if (minutes < 60) {
       return `${minutes} minute${minutes !== 1 ? "s" : ""} ago`;
     }
+
     if (hours < 24) {
       return `${hours} hour${hours !== 1 ? "s" : ""} ago`;
     }
+
     if (days === 1) return "Yesterday";
+
     if (days < 7) return `${days} days ago`;
 
     return date.toLocaleDateString("en-IN", {
       day: "numeric",
       month: "short",
-      year: date.getFullYear() !== new Date().getFullYear()
-        ? "numeric"
-        : undefined,
+      year:
+        date.getFullYear() !== new Date().getFullYear()
+          ? "numeric"
+          : undefined,
     });
   };
 
   // Mark one notification as read
   const markNotificationAsRead = async (notification) => {
-    if (!notification?._id || notification.isRead || actionLoading) return;
+    if (!notification?._id || notification.isRead || actionLoading) {
+      return;
+    }
 
     setActionLoading(true);
 
@@ -204,6 +234,7 @@ const CustomerDashboard = () => {
       );
     } catch (err) {
       console.error("Unable to mark notification as read:", err);
+
       setError(
         err.response?.data?.message ||
           "Unable to mark the notification as read."
@@ -235,6 +266,7 @@ const CustomerDashboard = () => {
       );
     } catch (err) {
       console.error("Unable to mark all notifications as read:", err);
+
       setError(
         err.response?.data?.message ||
           "Unable to mark all notifications as read."
@@ -249,7 +281,9 @@ const CustomerDashboard = () => {
     if (!request?._id || cancellingId) return;
 
     const confirmed = window.confirm(
-      `Are you sure you want to cancel your ${request.serviceName || "service"} request?`
+      `Are you sure you want to cancel your ${
+        request.serviceName || "service"
+      } request?`
     );
 
     if (!confirmed) return;
@@ -272,7 +306,8 @@ const CustomerDashboard = () => {
           item._id === request._id
             ? {
                 ...item,
-                ...(updatedRequest && typeof updatedRequest === "object"
+                ...(updatedRequest &&
+                typeof updatedRequest === "object"
                   ? updatedRequest
                   : {}),
                 status: "Cancelled",
@@ -283,16 +318,103 @@ const CustomerDashboard = () => {
 
       setSuccess("Your service request has been cancelled.");
 
-      // Refresh notifications in case the backend created one
       await getNotifications();
     } catch (err) {
       console.error("Unable to cancel service request:", err);
+
       setError(
         err.response?.data?.message ||
           "Unable to cancel this request. Please try again."
       );
     } finally {
       setCancellingId(null);
+    }
+  };
+
+  // Open complaint form for the selected request
+  const openComplaintForm = (request) => {
+    setSelectedRequest(request);
+    setComplaintCategory("Service Quality");
+    setComplaintSubject("");
+    setComplaintDescription("");
+    setError("");
+    setSuccess("");
+    setShowComplaintForm(true);
+  };
+
+  // Close complaint form
+  const closeComplaintForm = () => {
+    if (complaintLoading) return;
+
+    setShowComplaintForm(false);
+    setSelectedRequest(null);
+    setComplaintSubject("");
+    setComplaintDescription("");
+  };
+
+  // Submit complaint for the selected service request
+  const submitComplaint = async (event) => {
+    event.preventDefault();
+
+    if (!token) {
+      setError("Please log in to submit a complaint.");
+      return;
+    }
+
+    if (!selectedRequest?._id) {
+      setError("Please select a valid service request.");
+      return;
+    }
+
+    if (!complaintSubject.trim() || !complaintDescription.trim()) {
+      setError("Please enter a subject and complaint description.");
+      return;
+    }
+
+    setComplaintLoading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const requestProvider =
+        selectedRequest.provider?._id ||
+        selectedRequest.provider ||
+        undefined;
+
+      await axios.post(
+        `${API}/complaints`,
+        {
+          bookingId: selectedRequest._id,
+          provider: requestProvider,
+          category: complaintCategory,
+          subject: complaintSubject.trim(),
+          description: complaintDescription.trim(),
+        },
+        {
+          headers: authHeaders,
+        }
+      );
+
+      setSuccess(
+        `Your complaint for ${
+          selectedRequest.serviceName || "this service"
+        } has been submitted successfully.`
+      );
+
+      setShowComplaintForm(false);
+      setSelectedRequest(null);
+      setComplaintSubject("");
+      setComplaintDescription("");
+      setComplaintCategory("Service Quality");
+    } catch (err) {
+      console.error("Complaint submission error:", err);
+
+      setError(
+        err.response?.data?.message ||
+          "Unable to submit your complaint. Please try again."
+      );
+    } finally {
+      setComplaintLoading(false);
     }
   };
 
@@ -351,7 +473,10 @@ const CustomerDashboard = () => {
             aria-expanded={showNotifications}
             onClick={() => {
               setShowNotifications((previous) => !previous);
-              if (!showNotifications) getNotifications(true);
+
+              if (!showNotifications) {
+                getNotifications(true);
+              }
             }}
           >
             <FaBell />
@@ -424,13 +549,17 @@ const CustomerDashboard = () => {
                     .map((notification) => (
                       <div
                         className={`notification-item ${
-                          notification.isRead ? "notification-read" : "notification-unread"
+                          notification.isRead
+                            ? "notification-read"
+                            : "notification-unread"
                         }`}
                         key={notification._id}
                       >
                         <span
                           className={`notification-type-icon ${
-                            notification.isRead ? "" : "notification-type-icon-unread"
+                            notification.isRead
+                              ? ""
+                              : "notification-type-icon-unread"
                           }`}
                           aria-hidden="true"
                         >
@@ -440,6 +569,7 @@ const CustomerDashboard = () => {
                         <div className="notification-content">
                           <div className="notification-title-row">
                             <h3>{notification.title}</h3>
+
                             {!notification.isRead && (
                               <span className="unread-dot" />
                             )}
@@ -484,6 +614,7 @@ const CustomerDashboard = () => {
       {error && (
         <div className="dashboard-alert dashboard-alert-error" role="alert">
           <span>{error}</span>
+
           <button
             type="button"
             aria-label="Dismiss error"
@@ -497,6 +628,7 @@ const CustomerDashboard = () => {
       {success && (
         <div className="dashboard-alert dashboard-alert-success" role="status">
           <span>{success}</span>
+
           <button
             type="button"
             aria-label="Dismiss message"
@@ -586,6 +718,7 @@ const CustomerDashboard = () => {
 
                     <div className="request-main-info">
                       <h3>{request.serviceName || "Service Request"}</h3>
+
                       <span className="request-id">
                         Request ID: {request._id}
                       </span>
@@ -603,7 +736,9 @@ const CustomerDashboard = () => {
                   <div className="request-details-grid">
                     <div className="request-detail">
                       <span>Provider</span>
-                      <strong>{request.providerName || "Not assigned"}</strong>
+                      <strong>
+                        {request.providerName || "Not assigned"}
+                      </strong>
                     </div>
 
                     <div className="request-detail">
@@ -623,7 +758,9 @@ const CustomerDashboard = () => {
 
                     <div className="request-detail">
                       <span>Preferred time</span>
-                      <strong>{request.preferredTime || "Not specified"}</strong>
+                      <strong>
+                        {request.preferredTime || "Not specified"}
+                      </strong>
                     </div>
 
                     <div className="request-detail">
@@ -654,24 +791,155 @@ const CustomerDashboard = () => {
                         : ""}
                     </span>
 
-                    {canCancel(request.status) && (
+                    <div className="request-action-buttons">
                       <button
                         type="button"
-                        className="cancel-request-button"
-                        disabled={cancellingId === request._id}
-                        onClick={() => cancelRequest(request)}
+                        className="raise-complaint-button"
+                        onClick={() => openComplaintForm(request)}
                       >
-                        {cancellingId === request._id
-                          ? "Cancelling..."
-                          : "Cancel Request"}
+                        <FaExclamationCircle />
+                        Raise Complaint
                       </button>
-                    )}
+
+                      {canCancel(request.status) && (
+                        <button
+                          type="button"
+                          className="cancel-request-button"
+                          disabled={cancellingId === request._id}
+                          onClick={() => cancelRequest(request)}
+                        >
+                          {cancellingId === request._id
+                            ? "Cancelling..."
+                            : "Cancel Request"}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </article>
               ))}
           </div>
         )}
       </section>
+
+      {/* Complaint form modal */}
+      {showComplaintForm && selectedRequest && (
+        <div
+          className="complaint-modal-overlay"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              closeComplaintForm();
+            }
+          }}
+        >
+          <div
+            className="complaint-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="complaint-modal-title"
+          >
+            <div className="complaint-modal-header">
+              <div>
+                <span className="customer-eyebrow">CUSTOMER SUPPORT</span>
+                <h2 id="complaint-modal-title">Raise a Complaint</h2>
+                <p>
+                  Service:{" "}
+                  <strong>
+                    {selectedRequest.serviceName || "Service Request"}
+                  </strong>
+                </p>
+                <p className="complaint-request-id">
+                  Request ID: {selectedRequest._id}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className="complaint-modal-close"
+                onClick={closeComplaintForm}
+                disabled={complaintLoading}
+                aria-label="Close complaint form"
+              >
+                <FaTimes />
+              </button>
+            </div>
+
+            <form onSubmit={submitComplaint}>
+              <label htmlFor="complaint-category">
+                Complaint Category
+              </label>
+
+              <select
+                id="complaint-category"
+                value={complaintCategory}
+                onChange={(event) =>
+                  setComplaintCategory(event.target.value)
+                }
+                required
+              >
+                <option value="Service Quality">Service Quality</option>
+                <option value="Provider Behaviour">Provider Behaviour</option>
+                <option value="Payment Issue">Payment Issue</option>
+                <option value="Incomplete Work">Incomplete Work</option>
+                <option value="Delay in Service">Delay in Service</option>
+                <option value="Other">Other</option>
+              </select>
+
+              <label htmlFor="complaint-subject">Subject</label>
+
+              <input
+                id="complaint-subject"
+                type="text"
+                value={complaintSubject}
+                onChange={(event) =>
+                  setComplaintSubject(event.target.value)
+                }
+                placeholder="Briefly describe the issue"
+                minLength={3}
+                maxLength={150}
+                required
+              />
+
+              <label htmlFor="complaint-description">
+                Complaint Description
+              </label>
+
+              <textarea
+                id="complaint-description"
+                value={complaintDescription}
+                onChange={(event) =>
+                  setComplaintDescription(event.target.value)
+                }
+                placeholder="Explain what happened with this service..."
+                rows={5}
+                minLength={5}
+                maxLength={2000}
+                required
+              />
+
+              <div className="complaint-modal-actions">
+                <button
+                  type="button"
+                  className="complaint-cancel-button"
+                  onClick={closeComplaintForm}
+                  disabled={complaintLoading}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  className="complaint-submit-button"
+                  disabled={complaintLoading}
+                >
+                  {complaintLoading
+                    ? "Submitting..."
+                    : "Submit Complaint"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

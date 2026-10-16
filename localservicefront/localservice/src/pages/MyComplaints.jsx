@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import Swal from "sweetalert2";
-import "../Css/CustomerComplaints.css";
+import "../Css/MyComplaints.css";
 
 const API = "https://servitrust-baxkend.onrender.com/complaints";
 

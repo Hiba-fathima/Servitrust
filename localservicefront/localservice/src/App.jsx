@@ -20,6 +20,7 @@ import TotalProviders from './pages/TotalProviders'
 import ProviderSidebar from './pages/ProviderSidebar'
 import ProviderRequests from './pages/ProviderRequest'
 import ProviderServices from './pages/ProvideServices'
+import MyComplaints from './pages/MyComplaints'
 
 function App() {
   return (
@@ -96,6 +97,10 @@ function App() {
   element={<CustomerDashboard />}
 />
 
+ <Route
+  path="/customer/complaints"
+  element={<MyComplaints />}
+/>
 
 
 <Route
