@@ -220,6 +220,52 @@ app.post("/register", async (req, res) => {
 
 
 
+
+
+
+app.post("/setup-admin", async (req, res) => {
+  try {
+    const existingAdmin = await User.findOne({ role: "admin" });
+
+
+    if (
+  !process.env.ADMIN_SETUP_SECRET ||
+  req.body.setupSecret !== process.env.ADMIN_SETUP_SECRET
+) {
+  return res.status(403).json({
+    message: "Invalid setup secret",
+  });
+}
+    if (existingAdmin) {
+      return res.status(400).json({
+        message: "Admin account already exists",
+      });
+    }
+
+    const { name, email, password } = req.body;
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    const admin = await User.create({
+      name,
+      email: email.toLowerCase(),
+      password: hashedPassword,
+      role: "admin",
+    });
+
+    res.status(201).json({
+      message: "Admin created successfully",
+      email: admin.email,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to create admin" });
+  }
+});
+
+
+
+
 app.post("/login", async (req, res) => {
 try {
 const { email, password } = req.body;
@@ -2099,6 +2145,157 @@ app.get("/complaints", async (req, res) => {
   }
 });
 
+
+
+
+
+
+// CREATE COMPLAINT
+app.post("/complaints", verifyToken, async (req, res) => {
+  try {
+    const {
+      provider,
+      bookingId,
+      category,
+      subject,
+      description,
+    } = req.body;
+
+    // Only logged-in customers can submit complaints.
+    if (req.userRole !== "customer") {
+      return res.status(403).json({
+        message: "Only customers can submit complaints.",
+      });
+    }
+
+    // Use the customer ID from the verified token.
+    const customer = req.userId;
+
+    // Validate required fields.
+    if (
+      !category ||
+      !subject?.trim() ||
+      !description?.trim()
+    ) {
+      return res.status(400).json({
+        message: "Category, subject and description are required.",
+      });
+    }
+
+    // Match the category values in ComplaintModel.
+    const allowedCategories = [
+      "Service Quality",
+      "Provider Behaviour",
+      "Incomplete Service",
+      "Payment Issue",
+      "Booking Issue",
+      "Other",
+    ];
+
+    if (!allowedCategories.includes(category)) {
+      return res.status(400).json({
+        message: "Invalid complaint category.",
+      });
+    }
+
+    // Validate customer ID.
+    if (!mongoose.isValidObjectId(customer)) {
+      return res.status(400).json({
+        message: "Invalid customer ID.",
+      });
+    }
+
+    // Validate provider ID, if supplied.
+    if (provider && !mongoose.isValidObjectId(provider)) {
+      return res.status(400).json({
+        message: "Invalid provider ID.",
+      });
+    }
+
+    // Validate the service request ID, if supplied.
+    if (bookingId && !mongoose.isValidObjectId(bookingId)) {
+      return res.status(400).json({
+        message: "Invalid service request ID.",
+      });
+    }
+
+    // Confirm that the customer exists.
+    const customerExists = await User.findById(customer);
+
+    if (!customerExists) {
+      return res.status(404).json({
+        message: "Customer account not found.",
+      });
+    }
+
+    // If a service request ID is supplied, verify ownership.
+    let serviceRequest = null;
+
+    if (bookingId) {
+      serviceRequest = await ServiceRequest.findById(bookingId);
+
+      if (!serviceRequest) {
+        return res.status(404).json({
+          message: "Service request not found.",
+        });
+      }
+
+      if (
+        String(serviceRequest.customerId) !== String(customer)
+      ) {
+        return res.status(403).json({
+          message: "You cannot complain about another customer's request.",
+        });
+      }
+    }
+
+    // Verify that the provider belongs to this service request.
+    if (
+      provider &&
+      serviceRequest &&
+      String(serviceRequest.providerId) !== String(provider)
+    ) {
+      return res.status(400).json({
+        message: "The provider does not match this service request.",
+      });
+    }
+
+    const complaint = await Complaint.create({
+      customer,
+      provider: provider || serviceRequest?.providerId || null,
+      category,
+      subject: subject.trim(),
+      description: description.trim(),
+    });
+
+    // Return the saved complaint with customer and provider information.
+    const savedComplaint = await Complaint.findById(complaint._id)
+      .populate("customer", "name email phone")
+      .populate("provider");
+
+    return res.status(201).json({
+      message: "Complaint submitted successfully.",
+      complaint: {
+        ...savedComplaint.toObject(),
+        serviceName: serviceRequest?.serviceName || "",
+        bookingId: serviceRequest?._id || null,
+      },
+    });
+  } catch (error) {
+    console.error("CREATE COMPLAINT ERROR:", error);
+
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        message: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      message: "Failed to submit complaint.",
+      error: error.message,
+    });
+  }
+});
 
 // const express = require("express");
 // const mongoose = require("mongoose");
