@@ -63,4 +63,13 @@ const complaintSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+
+complaintSchema.pre("validate", function () {
+  if (!this.complaintId) {
+    this.complaintId =
+      `CMP-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+  }
+});
+
+
 module.exports = mongoose.model("Complaint", complaintSchema);
