@@ -945,13 +945,11 @@ app.get(
 
 
 
-
 app.post("/service-requests", async (req, res) => {
   try {
     const {
       customerId,
       providerId,
-      providerName,
       serviceName,
       preferredDate,
       preferredTime,
@@ -960,28 +958,48 @@ app.post("/service-requests", async (req, res) => {
       notes
     } = req.body;
 
-   const missingFields = [];
+    // Validate required fields
+    const missingFields = [];
 
-if (!customerId) missingFields.push("customerId");
-if (!providerId) missingFields.push("providerId");
-if (!providerName) missingFields.push("providerName");
-if (!serviceName) missingFields.push("serviceName");
-if (!preferredDate) missingFields.push("preferredDate");
-if (!preferredTime) missingFields.push("preferredTime");
-if (!location) missingFields.push("location");
-if (!description) missingFields.push("description");
+    if (!customerId) missingFields.push("customerId");
+    if (!providerId) missingFields.push("providerId");
+    if (!serviceName) missingFields.push("serviceName");
+    if (!preferredDate) missingFields.push("preferredDate");
+    if (!preferredTime) missingFields.push("preferredTime");
+    if (!location) missingFields.push("location");
+    if (!description) missingFields.push("description");
 
-if (missingFields.length > 0) {
-  return res.status(400).json({
-    message: "Please fill all required fields",
-    missingFields
-  });
-}
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        message: "Please fill all required fields",
+        missingFields
+      });
+    }
 
+    // Find the provider
+    const provider = await Provider.findById(providerId);
+
+    if (!provider) {
+      return res.status(404).json({
+        message: "Provider not found"
+      });
+    }
+
+    // Get the provider's name from their User account
+    const providerUser = await User.findById(provider.userId)
+      .select("name");
+
+    if (!providerUser || !providerUser.name?.trim()) {
+      return res.status(400).json({
+        message: "Provider account name not found"
+      });
+    }
+
+    // Create the service request using the database name
     const request = new ServiceRequest({
       customerId,
       providerId,
-      providerName,
+      providerName: providerUser.name.trim(),
       serviceName,
       preferredDate,
       preferredTime,
@@ -989,38 +1007,33 @@ if (missingFields.length > 0) {
       description,
       notes
     });
-await request.save();
 
-// FIND THE PROVIDER PROFILE
-const provider = await Provider.findById(providerId);
+    await request.save();
 
-if (provider) {
-  // NOTIFY THE PROVIDER'S USER ACCOUNT
-  await createNotification({
-    recipientId: provider.userId,
-    recipientRole: "provider",
-    title: "New Service Request",
-    message: `You have received a new ${serviceName} service request.`,
-    type: "new_service_request",
-    relatedId: request._id.toString(),
-  });
-}
+    // Notify the provider
+    await createNotification({
+      recipientId: provider.userId,
+      recipientRole: "provider",
+      title: "New Service Request",
+      message: `You have received a new ${serviceName} service request.`,
+      type: "new_service_request",
+      relatedId: request._id.toString()
+    });
 
-res.status(201).json({
-  message: "Service request sent successfully",
-  request
-});
+    return res.status(201).json({
+      message: "Service request sent successfully",
+      request
+    });
 
   } catch (error) {
-    console.log("CREATE SERVICE REQUEST ERROR:", error);
+    console.error("CREATE SERVICE REQUEST ERROR:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Failed to create service request",
       error: error.message
     });
   }
 });
-
 
 
 
