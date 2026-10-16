@@ -1,11 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const API_URL = "https://servitrust-baxkend.onrender.com";
 
 const Login = () => {
 const navigate = useNavigate();
+const [showPassword, setShowPassword] = useState(false);
 
 const handleLogin = async (e) => {
 e.preventDefault();
@@ -18,7 +20,6 @@ try {
 
   console.log("LOGIN RESPONSE:", response.data);
 
-  // Check that the login response contains the required details
   if (!response.data.token || !response.data.user) {
     alert("Invalid login response. Please try again.");
     return;
@@ -26,7 +27,7 @@ try {
 
   const user = response.data.user;
 
-  // Save login details only after successful authentication
+  // Save login details
   localStorage.setItem("token", response.data.token);
   localStorage.setItem("userId", user.id);
   localStorage.setItem("role", user.role);
@@ -46,11 +47,11 @@ try {
 
       console.log("PROVIDER PROFILE:", providerResponse.data);
 
-      // Check provider account status if the API returns it
       const provider = providerResponse.data.provider
         ? providerResponse.data.provider
         : providerResponse.data;
 
+      // Check provider suspension
       if (provider.accountStatus === "Suspended") {
         localStorage.removeItem("token");
         localStorage.removeItem("userId");
@@ -65,11 +66,9 @@ try {
         return;
       }
 
-      // Provider profile exists and is active
       navigate("/provider/dashboard");
     } catch (providerError) {
       if (providerError.response?.status === 404) {
-        // Provider profile does not exist
         navigate("/provider/profile");
       } else {
         console.error(
@@ -102,56 +101,73 @@ try {
 
 };
 
-return ( <div> <div className="auth-page"> <div className="auth-card"> <div className="auth-logo">
+return ( <div className="auth-page"> <div className="auth-card"> <div className="auth-logo">
 Servi<span>Trust</span> </div>
 
-      <h2>Welcome back</h2>
+    <h2>Welcome back</h2>
 
-      <p className="auth-subtitle">
-        Login to manage your services and requests.
-      </p>
+    <p className="auth-subtitle">
+      Login to manage your services and requests.
+    </p>
 
-      <form onSubmit={handleLogin}>
-        <div className="form-group">
-          <label htmlFor="email">Email</label>
+    <form onSubmit={handleLogin}>
+      {/* Email */}
+      <div className="form-group">
+        <label htmlFor="email">Email</label>
+
+        <input
+          type="email"
+          id="email"
+          name="email"
+          placeholder="Enter your email"
+          autoComplete="email"
+          required
+        />
+      </div>
+
+      {/* Password with eye icon */}
+      <div className="form-group">
+        <label htmlFor="password">Password</label>
+
+        <div className="password-input-wrapper">
           <input
-            type="email"
-            id="email"
-            name="email"
-            placeholder="Enter your email"
-            autoComplete="email"
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="password">Password</label>
-          <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             id="password"
             name="password"
             placeholder="Enter your password"
             autoComplete="current-password"
             required
           />
+
+          <button
+            type="button"
+            className="password-toggle"
+            onClick={() => setShowPassword((prev) => !prev)}
+            aria-label={
+              showPassword ? "Hide password" : "Show password"
+            }
+            aria-pressed={showPassword}
+          >
+            {showPassword ? <FaEyeSlash /> : <FaEye />}
+          </button>
         </div>
+      </div>
 
-        <div className="forgot-password">
-          <Link to="/forgot-password">
-            Forgot password?
-          </Link>
-        </div>
+      <div className="forgot-password">
+        <Link to="/forgot-password">
+          Forgot password?
+        </Link>
+      </div>
 
-        <button className="register-btn" type="submit">
-          Login
-        </button>
-      </form>
+      <button className="register-btn" type="submit">
+        Login
+      </button>
+    </form>
 
-      <p className="auth-footer">
-        Don't have an account?{" "}
-        <Link to="/register">Create an account</Link>
-      </p>
-    </div>
+    <p className="auth-footer">
+      Don't have an account?{" "}
+      <Link to="/register">Create an account</Link>
+    </p>
   </div>
 </div>
 

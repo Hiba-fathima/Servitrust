@@ -56,8 +56,12 @@ const Navbar = () => {
   // LOGOUT
   // =====================================================
 
-  const handleLogout = () => {
+const handleLogout = () => {
+  const confirmLogout = window.confirm(
+    "Are you sure you want to logout?"
+  );
 
+  if (confirmLogout) {
     localStorage.removeItem("token");
     localStorage.removeItem("userId");
     localStorage.removeItem("role");
@@ -67,8 +71,9 @@ const Navbar = () => {
     setShowSidebar(false);
 
     window.location.href = "/login";
+  }
+};
 
-  };
 
 
   return (

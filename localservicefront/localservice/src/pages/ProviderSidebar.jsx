@@ -9,7 +9,12 @@ const ProviderSidebar = () => {
   // LOGOUT
   // =====================================================
 
-  const handleLogout = () => {
+const handleLogout = () => {
+  const confirmLogout = window.confirm(
+    "Are you sure you want to logout?"
+  );
+
+  if (confirmLogout) {
     localStorage.removeItem("token");
     localStorage.removeItem("userId");
     localStorage.removeItem("role");
@@ -19,8 +24,11 @@ const ProviderSidebar = () => {
     );
 
     navigate("/login");
-  };
+  }
+};
 
+
+  
   return (
     <aside className="provider-sidebar">
 

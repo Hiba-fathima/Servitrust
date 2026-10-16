@@ -1,0 +1,38 @@
+.password-input-wrapper {
+position: relative;
+display: flex;
+align-items: center;
+width: 100%;
+}
+
+.password-input-wrapper input {
+width: 100%;
+padding-right: 45px;
+box-sizing: border-box;
+}
+
+.password-toggle {
+position: absolute;
+right: 12px;
+top: 50%;
+transform: translateY(-50%);
+display: flex;
+align-items: center;
+justify-content: center;
+padding: 5px;
+border: none;
+background: transparent;
+color: #777;
+font-size: 18px;
+cursor: pointer;
+}
+
+.password-toggle:hover {
+color: #008577;
+}
+
+.password-toggle:focus-visible {
+outline: 2px solid #008577;
+outline-offset: 2px;
+border-radius: 4px;
+}
