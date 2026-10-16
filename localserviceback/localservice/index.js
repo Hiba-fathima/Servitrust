@@ -1384,13 +1384,16 @@ app.get("/service-requests/provider/:providerId", async (req, res) => {
 });
 
 
+
+
+
 app.put("/service-requests/:id/status", async (req, res) => {
   try {
     const { status, providerId } = req.body;
 
     if (!["Accepted", "Rejected"].includes(status)) {
       return res.status(400).json({
-        message: "Invalid request status"
+        message: "Invalid request status",
       });
     }
 
@@ -1398,44 +1401,84 @@ app.put("/service-requests/:id/status", async (req, res) => {
 
     if (!request) {
       return res.status(404).json({
-        message: "Service request not found"
+        message: "Service request not found",
       });
     }
 
-    // Check that this request belongs to this provider
+    // Verify the provider owns this request when providerId is supplied.
     if (
       providerId &&
       String(request.providerId) !== String(providerId)
     ) {
       return res.status(403).json({
-        message: "You cannot update this request"
+        message: "You cannot update this request",
       });
     }
 
-    // Only pending requests can be accepted/rejected
     if (request.status !== "Pending") {
       return res.status(400).json({
-        message: "This request has already been processed"
+        message: "This request has already been processed",
       });
     }
 
-    request.status = status;
+    const customer = await User.findById(request.customerId);
 
+    if (!customer) {
+      return res.status(404).json({
+        message: "Customer account not found",
+      });
+    }
+
+    // Update the request.
+    request.status = status;
     await request.save();
 
-    res.json({
-      message: `Request ${status} successfully`,
-      request
+    // Create a notification for the customer.
+    const notification = await createNotification({
+      recipientId: customer._id,
+      recipientRole: "customer",
+      title:
+        status === "Accepted"
+          ? "Request Accepted"
+          : "Request Rejected",
+      message:
+        status === "Accepted"
+          ? `Your ${request.serviceName} service request has been accepted.`
+          : `Your ${request.serviceName} service request has been rejected.`,
+      type:
+        status === "Accepted"
+          ? "request_accepted"
+          : "request_rejected",
+      relatedId: request._id.toString(),
     });
 
-  } catch (error) {
-    console.log("UPDATE REQUEST STATUS ERROR:", error);
+    if (!notification) {
+      console.error(
+        "Request status updated, but notification creation failed."
+      );
 
-    res.status(500).json({
-      message: "Failed to update request status"
+      return res.status(200).json({
+        message: `Request ${status.toLowerCase()}, but the notification could not be created.`,
+        request,
+        notificationCreated: false,
+      });
+    }
+
+    return res.status(200).json({
+      message: `Request ${status.toLowerCase()} successfully`,
+      request,
+      notificationCreated: true,
+    });
+  } catch (error) {
+    console.error("UPDATE REQUEST STATUS ERROR:", error);
+
+    return res.status(500).json({
+      message: "Failed to update request status",
+      error: error.message,
     });
   }
 });
+
 
 
 
