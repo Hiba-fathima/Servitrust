@@ -2124,20 +2124,10 @@ app.patch(
 );
 
 
-
-
-
 app.get("/complaints", async (req, res) => {
   try {
     const complaints = await Complaint.find()
       .populate("customer", "name email")
-      .populate({
-        path: "provider",
-        populate: {
-          path: "userId",
-          select: "name email",
-        },
-      })
       .sort({ createdAt: -1 });
 
     res.status(200).json(complaints);
