@@ -1847,52 +1847,150 @@ app.delete("/categories/:id", async (req, res) => {
 });
 
 
-// Update service request status
-app.patch("/service-requests/:id/status", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
 
-    const allowedStatuses = [
-      "Pending",
-      "Accepted",
-      "In Progress",
-      "Completed",
-      "Cancelled",
-    ];
 
-    // Validate status
-    if (!allowedStatuses.includes(status)) {
-      return res.status(400).json({
-        message: "Invalid status",
+
+
+
+
+// UPDATE SERVICE REQUEST STATUS AND NOTIFY CUSTOMER
+app.patch(
+  "/service-requests/:id/status",
+  verifyToken,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+
+      const allowedStatuses = [
+        "Pending",
+        "Accepted",
+        "Rejected",
+        "In Progress",
+        "Completed",
+        "Cancelled",
+      ];
+
+      if (!allowedStatuses.includes(status)) {
+        return res.status(400).json({
+          message: "Invalid status",
+        });
+      }
+
+      const request = await ServiceRequest.findById(id);
+
+      if (!request) {
+        return res.status(404).json({
+          message: "Service request not found",
+        });
+      }
+
+      // Allow only appropriate status transitions.
+      const previousStatus = request.status;
+
+      const allowedTransitions = {
+        Pending: ["Accepted", "Rejected", "Cancelled"],
+        Accepted: ["In Progress", "Completed", "Cancelled"],
+        "In Progress": ["Completed", "Cancelled"],
+      };
+
+      if (
+        !allowedTransitions[previousStatus] ||
+        !allowedTransitions[previousStatus].includes(status)
+      ) {
+        return res.status(400).json({
+          message: `Cannot change request status from ${previousStatus} to ${status}`,
+        });
+      }
+
+      // Verify who is making the update.
+      if (req.userRole === "provider") {
+        const provider = await Provider.findOne({
+          userId: req.userId,
+        });
+
+        if (
+          !provider ||
+          String(request.providerId) !== String(provider._id)
+        ) {
+          return res.status(403).json({
+            message: "You cannot update this request",
+          });
+        }
+      } else if (req.userRole === "customer") {
+        if (
+          String(request.customerId) !== String(req.userId) ||
+          status !== "Cancelled"
+        ) {
+          return res.status(403).json({
+            message: "You cannot perform this action",
+          });
+        }
+      } else if (req.userRole !== "admin") {
+        return res.status(403).json({
+          message: "You are not authorized to update this request",
+        });
+      }
+
+      request.status = status;
+      await request.save();
+
+      // Notify the customer about meaningful status changes.
+      const messages = {
+        Accepted: {
+          title: "Request Accepted",
+          message: `Your ${request.serviceName} service request has been accepted.`,
+          type: "request_accepted",
+        },
+        Rejected: {
+          title: "Request Rejected",
+          message: `Your ${request.serviceName} service request has been rejected.`,
+          type: "request_rejected",
+        },
+        "In Progress": {
+          title: "Service In Progress",
+          message: `Work on your ${request.serviceName} service request is now in progress.`,
+          type: "request_in_progress",
+        },
+        Completed: {
+          title: "Service Completed",
+          message: `Your ${request.serviceName} service request has been marked as completed.`,
+          type: "request_completed",
+        },
+        Cancelled: {
+          title: "Request Cancelled",
+          message: `Your ${request.serviceName} service request has been cancelled.`,
+          type: "request_cancelled",
+        },
+      };
+
+      const notificationData = messages[status];
+
+      if (notificationData) {
+        await createNotification({
+          recipientId: request.customerId,
+          recipientRole: "customer",
+          title: notificationData.title,
+          message: notificationData.message,
+          type: notificationData.type,
+          relatedId: request._id.toString(),
+        });
+      }
+
+      return res.json({
+        message: `Request status updated to ${status}`,
+        request,
+      });
+    } catch (error) {
+      console.error("UPDATE REQUEST STATUS ERROR:", error);
+
+      return res.status(500).json({
+        message: "Failed to update request status",
       });
     }
-
-    // Update status in MongoDB
-    const request = await ServiceRequest.findByIdAndUpdate(
-      id,
-      { status: status },
-      { new: true, runValidators: true }
-    );
-
-    if (!request) {
-      return res.status(404).json({
-        message: "Service request not found",
-      });
-    }
-
-    res.status(200).json({
-      message: "Status updated successfully",
-      request,
-    });
-  } catch (error) {
-    console.error("Status update error:", error);
-
-    res.status(500).json({
-      message: "Failed to update status",
-    });
   }
-});
+);
+
 
 
 
