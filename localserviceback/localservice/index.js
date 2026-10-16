@@ -754,10 +754,9 @@ app.get("/providers", async (req, res) => {
 
 
 
-
 app.get("/providers/:id", async (req, res) => {
   try {
-    const provider = await Provider.findById(req.params.id);
+    const provider = await Provider.findById(req.params.id).lean();
 
     if (!provider) {
       return res.status(404).json({
@@ -765,28 +764,33 @@ app.get("/providers/:id", async (req, res) => {
       });
     }
 
-    const user = await User.findById(provider.userId);
+    const user = await User.findById(provider.userId)
+      .select("name email phone role")
+      .lean();
+
     console.log("PROVIDER ID:", provider._id);
-console.log("LINKED USER ID:", provider.userId);
-console.log("LINKED USER DATA:", user);
+    console.log("LINKED USER ID:", provider.userId);
+    console.log("LINKED USER:", user);
 
-
-    res.json({
-      ...provider.toObject(),
-      name: user?.name || "",
+    return res.status(200).json({
+      ...provider,
+      name: user?.name?.trim() || provider.name?.trim() || "",
+      email: user?.email || "",
       phone: user?.phone || "",
-      email: user?.email || ""
+      role: user?.role || ""
     });
-
   } catch (error) {
-    console.log("GET PROVIDER ERROR:", error);
+    console.error("Get provider error:", error);
 
-    res.status(500).json({
-      message: "Failed to get provider",
+    return res.status(500).json({
+      message: "Failed to fetch provider",
       error: error.message
     });
   }
 });
+
+
+
 
 
 
@@ -1008,6 +1012,90 @@ app.post("/service-requests", async (req, res) => {
     });
   }
 });
+
+
+
+
+
+
+
+app.post("/service-requests", async (req, res) => {
+  try {
+    const {
+      customerId,
+      providerId,
+      serviceName,
+      preferredDate,
+      preferredTime,
+      location,
+      description
+    } = req.body;
+
+    const missingFields = [];
+
+    if (!customerId) missingFields.push("customerId");
+    if (!providerId) missingFields.push("providerId");
+    if (!serviceName) missingFields.push("serviceName");
+    if (!preferredDate) missingFields.push("preferredDate");
+    if (!preferredTime) missingFields.push("preferredTime");
+    if (!location?.trim()) missingFields.push("location");
+    if (!description?.trim()) missingFields.push("description");
+
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        message: "Required fields are missing",
+        missingFields
+      });
+    }
+
+    // Find the provider
+    const provider = await Provider.findById(providerId);
+
+    if (!provider) {
+      return res.status(404).json({
+        message: "Provider not found"
+      });
+    }
+
+    // Find the provider's linked user account
+    const providerUser = await User.findById(provider.userId)
+      .select("name email phone role");
+
+    if (!providerUser || !providerUser.name?.trim()) {
+      return res.status(400).json({
+        message: "Provider account name not found",
+        providerId: provider._id,
+        userId: provider.userId
+      });
+    }
+
+    // Create service request
+    const serviceRequest = await ServiceRequest.create({
+      customerId,
+      providerId: provider._id,
+      providerName: providerUser.name.trim(),
+      serviceName,
+      preferredDate,
+      preferredTime,
+      location: location.trim(),
+      description: description.trim(),
+      status: "Pending"
+    });
+
+    return res.status(201).json({
+      message: "Service request submitted successfully",
+      request: serviceRequest
+    });
+  } catch (error) {
+    console.error("Create service request error:", error);
+
+    return res.status(500).json({
+      message: "Failed to create service request",
+      error: error.message
+    });
+  }
+});
+
 
 
 
@@ -1448,7 +1536,6 @@ app.get("/providers/user/:userId", async (req, res) => {
 
 
 
-
 app.put("/providers/:id", async (req, res) => {
   try {
     const {
@@ -1462,105 +1549,74 @@ app.put("/providers/:id", async (req, res) => {
       availability
     } = req.body;
 
-    if (!name) {
+    if (
+      !name?.trim() ||
+      !phone?.trim() ||
+      !Array.isArray(category) ||
+      category.length === 0 ||
+      !Array.isArray(services) ||
+      services.length === 0 ||
+      !experience ||
+      !location?.trim() ||
+      !description?.trim()
+    ) {
       return res.status(400).json({
-        message: "Name is required"
+        message: "Please provide all required provider details"
       });
     }
 
-    if (!phone) {
-      return res.status(400).json({
-        message: "Phone is required"
-      });
-    }
-
-    if (!Array.isArray(category) || category.length === 0) {
-      return res.status(400).json({
-        message: "Please select at least one category"
-      });
-    }
-
-    if (!Array.isArray(services) || services.length === 0) {
-      return res.status(400).json({
-        message: "Please select at least one service"
-      });
-    }
-
-    if (!experience) {
-      return res.status(400).json({
-        message: "Experience is required"
-      });
-    }
-
-    if (!location) {
-      return res.status(400).json({
-        message: "Location is required"
-      });
-    }
-
-    if (!description) {
-      return res.status(400).json({
-        message: "Description is required"
-      });
-    }
-
-    const provider = await Provider.findById(
-      req.params.id
-    );
+    const provider = await Provider.findById(req.params.id);
 
     if (!provider) {
       return res.status(404).json({
-        message: "Provider profile not found"
+        message: "Provider not found"
       });
     }
 
+    const linkedUser = await User.findById(provider.userId);
+
+    if (!linkedUser) {
+      return res.status(404).json({
+        message: "Linked user account not found"
+      });
+    }
+
+    // Update provider details
+    provider.name = name.trim();
     provider.category = category;
     provider.services = services;
-    provider.experience = experience;
-    provider.location = location;
-    provider.description = description;
-    provider.availability =
-      availability || "Available";
+    provider.experience = String(experience);
+    provider.location = location.trim();
+    provider.description = description.trim();
+    provider.availability = availability || "Available";
 
     await provider.save();
 
-    await User.findByIdAndUpdate(
-      provider.userId,
-      {
-        name,
-        phone
-      }
-    );
+    // Update the linked user account
+    linkedUser.name = name.trim();
+    linkedUser.phone = phone.trim();
 
-    const user = await User.findById(
-      provider.userId
-    ).select(
-      "name email phone role"
-    );
+    await linkedUser.save();
 
-    const updatedProvider = {
-      ...provider.toObject(),
-      name: user?.name || "",
-      email: user?.email || "",
-      phone: user?.phone || ""
-    };
-
-    res.json({
+    return res.status(200).json({
       message: "Provider profile updated successfully",
-      provider: updatedProvider
+      provider: {
+        ...provider.toObject(),
+        name: linkedUser.name,
+        email: linkedUser.email,
+        phone: linkedUser.phone
+      }
     });
-
   } catch (error) {
-    console.log(
-      "UPDATE PROVIDER PROFILE ERROR:",
-      error
-    );
+    console.error("Update provider error:", error);
 
-    res.status(500).json({
-      message: "Failed to update provider profile"
+    return res.status(500).json({
+      message: "Failed to update provider profile",
+      error: error.message
     });
   }
 });
+
 
 
 
