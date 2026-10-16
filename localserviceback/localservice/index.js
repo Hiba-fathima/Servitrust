@@ -758,7 +758,7 @@ app.get("/providers", async (req, res) => {
 
 app.get("/providers/:id", async (req, res) => {
   try {
-    const provider = await Provider.findById(req.params.id).lean();
+    const provider = await Provider.findById(req.params.id);
 
     if (!provider) {
       return res.status(404).json({
@@ -766,27 +766,13 @@ app.get("/providers/:id", async (req, res) => {
       });
     }
 
-    console.log("PROVIDER USER ID:", provider.userId);
-
-    const user = await User.findById(provider.userId)
-      .select("name email phone")
-      .lean();
-
-    console.log("LINKED USER DETAILS:", user);
-
-    if (!user) {
-      return res.status(404).json({
-        message: "Linked user account not found",
-        providerId: provider._id,
-        userId: provider.userId
-      });
-    }
+    const user = await User.findById(provider.userId);
 
     return res.json({
-      ...provider,
-      name: user.name || "",
-      email: user.email || "",
-      phone: user.phone || ""
+      ...provider.toObject(),
+      name: user?.name || "",
+      phone: user?.phone || "",
+      email: user?.email || ""
     });
 
   } catch (error) {
@@ -798,7 +784,6 @@ app.get("/providers/:id", async (req, res) => {
     });
   }
 });
-
 
 
 
