@@ -2,94 +2,96 @@ const mongoose = require("mongoose");
 
 const providerSchema = new mongoose.Schema({
 
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "users",
-    required: true
-  },
-
- category: {
-  type: [String],
-  required: true
+userId: {
+type: mongoose.Schema.Types.ObjectId,
+ref: "users",
+required: true
 },
 
-  services: {
-    type: [String],
-    required: true
-  },
+// ADD THIS FIELD
+name: {
+type: String,
+default: ""
+},
 
-  location: {
-    type: String,
-    required: true
-  },
+category: {
+type: [String],
+required: true
+},
 
-  experience: {
-    type: String,
-    required: true
-  },
+services: {
+type: [String],
+required: true
+},
 
-  description: {
-    type: String,
-    required: true
-  },
+location: {
+type: String,
+required: true
+},
 
-  availability: {
-    type: String,
-    default: "Available"
-  },
+experience: {
+type: String,
+required: true
+},
 
-  verificationStatus: {
-    type: String,
-    default: "Pending"
-  },
+description: {
+type: String,
+required: true
+},
 
-  reliabilityScore: {
-    type: Number,
-    default: 0
-  },
+availability: {
+type: String,
+default: "Available"
+},
 
-  completedServices: {
-    type: Number,
-    default: 0
-  },
+verificationStatus: {
+type: String,
+default: "Pending"
+},
 
-  cancelledServices: {
-    type: Number,
-    default: 0
-  },
+reliabilityScore: {
+type: Number,
+default: 0
+},
 
-  complaints: {
-    type: Number,
-    default: 0
-  },
+completedServices: {
+type: Number,
+default: 0
+},
 
-  averageRating: {
-    type: Number,
-    default: 0
-  },
-  
-  accountStatus: {
-  type: String,
-  enum: ["Active", "Suspended"],
-  default: "Active",
+cancelledServices: {
+type: Number,
+default: 0
+},
+
+complaints: {
+type: Number,
+default: 0
+},
+
+averageRating: {
+type: Number,
+default: 0
+},
+
+accountStatus: {
+type: String,
+enum: ["Active", "Suspended"],
+default: "Active"
 },
 
 suspensionReason: {
-  type: String,
-  default: "",
+type: String,
+default: ""
 },
 
 suspendedAt: {
-  type: Date,
-  default: null,
-},
-
+type: Date,
+default: null
+}
 
 });
 
-const Provider = mongoose.model(
-  "providers",
-  providerSchema
-);
+const Provider = mongoose.model("providers", providerSchema);
 
 module.exports = Provider;
