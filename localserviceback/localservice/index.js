@@ -110,46 +110,113 @@ const createNotification = async ({
 app.get("/", (req, res) => {
   res.send("ServiTrust Backend Running");
 });
+
+
+
 app.post("/register", async (req, res) => {
-
   try {
-
     const { name, email, phone, password, role } = req.body;
 
-    const existingUser = await User.findOne({ email });
+    if (!name || !email || !password || !role) {
+      return res.status(400).json({
+        message: "Name, email, password and role are required",
+      });
+    }
+
+    if (!["customer", "provider", "admin"].includes(role)) {
+      return res.status(400).json({
+        message: "Invalid role",
+      });
+    }
+
+    const normalizedEmail = String(email).trim().toLowerCase();
+
+    const existingUser = await User.findOne({
+      email: normalizedEmail,
+    });
 
     if (existingUser) {
       return res.status(400).json({
-        message: "Email already registered"
+        message: "Email already registered",
       });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = new User({
-      name,
-      email,
-      phone,
+      name: String(name).trim(),
+      email: normalizedEmail,
+      phone: phone || "",
       password: hashedPassword,
-      role
+      role,
     });
 
     await newUser.save();
 
-    res.status(201).json({
-      message: "Registration successful"
-    });
+    // Create the provider record immediately after registration.
+    if (role === "provider") {
+      let provider;
 
+      try {
+        provider = new Provider({
+          userId: newUser._id,
+          category: [],
+          services: [],
+          location: "",
+          experience: "",
+          description: "",
+          availability: "Available",
+          verificationStatus: "Pending",
+          reliabilityScore: 0,
+          completedServices: 0,
+          cancelledServices: 0,
+          complaints: 0,
+          averageRating: 0,
+        });
+
+        // The initial provider profile is intentionally incomplete.
+        await provider.save({
+          validateBeforeSave: false,
+        });
+      } catch (providerError) {
+        // Avoid leaving a registered provider user without a provider record.
+        await User.findByIdAndDelete(newUser._id);
+        throw providerError;
+      }
+
+      await createNotification({
+        recipientRole: "admin",
+        title: "New Provider Registration",
+        message: `${newUser.name} has registered as a service provider. Their profile is awaiting completion and verification.`,
+        type: "provider_registration",
+        relatedId: provider._id.toString(),
+      });
+    }
+
+    return res.status(201).json({
+      message:
+        role === "provider"
+          ? "Registration successful. Please complete your provider profile."
+          : "Registration successful",
+
+      user: {
+        id: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+        phone: newUser.phone,
+        role: newUser.role,
+      },
+    });
   } catch (error) {
+    console.error("REGISTER ERROR:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Registration failed",
-      error: error.message
+      error: error.message,
     });
-
   }
-
 });
+
 
 
 
@@ -745,36 +812,42 @@ await createNotification({
 
 
 
-
 app.get("/providers", async (req, res) => {
   try {
-    const providers = await Provider.find();
+    const providers = await Provider.find().sort({
+      _id: -1,
+    });
 
     const providersWithUser = await Promise.all(
       providers.map(async (provider) => {
         const user = await User.findById(provider.userId)
-          .select("name email phone");
+          .select("name email phone role");
 
         return {
           ...provider.toObject(),
+
           name: user?.name || "",
           email: user?.email || "",
-          phone: user?.phone || ""
+          phone: user?.phone || "",
+
+          // Older provider records without a status remain visible as pending.
+          verificationStatus:
+            provider.verificationStatus || "Pending",
         };
       })
     );
 
     res.json(providersWithUser);
-
   } catch (error) {
-    console.log("GET PROVIDERS ERROR:", error);
+    console.error("GET PROVIDERS ERROR:", error);
 
     res.status(500).json({
       message: "Failed to get providers",
-      error: error.message
+      error: error.message,
     });
   }
 });
+
 
 
 
@@ -2308,7 +2381,62 @@ app.patch("/service-requests/:id/status", async (req, res) => {
 //   }
 // };
 
+// ADMIN SENDS PROFILE COMPLETION NOTIFICATION TO PROVIDER
+app.post(
+  "/notifications/provider-reminder",
+  verifyToken,
+  async (req, res) => {
+    try {
+      // Only admin can send provider reminders
+      if (req.userRole !== "admin") {
+        return res.status(403).json({
+          message: "Only admin can send profile reminders",
+        });
+      }
 
+      const { providerId, title, message } = req.body;
+
+      if (!providerId || !title || !message) {
+        return res.status(400).json({
+          message: "Provider ID, title and message are required",
+        });
+      }
+
+      const provider = await Provider.findById(providerId);
+
+      if (!provider) {
+        return res.status(404).json({
+          message: "Provider not found",
+        });
+      }
+
+      if (!provider.userId) {
+        return res.status(400).json({
+          message: "This provider is not linked to a user account",
+        });
+      }
+
+      await createNotification({
+        recipientId: provider.userId,
+        recipientRole: "provider",
+        title: title,
+        message: message,
+        type: "profile_completion",
+        relatedId: provider._id.toString(),
+      });
+
+      return res.status(201).json({
+        message: "Profile completion notification sent successfully",
+      });
+    } catch (error) {
+      console.error("PROVIDER REMINDER ERROR:", error);
+
+      return res.status(500).json({
+        message: "Failed to send profile reminder",
+      });
+    }
+  }
+);
 
 
 // GET NOTIFICATIONS
