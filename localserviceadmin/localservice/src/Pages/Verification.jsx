@@ -3,6 +3,8 @@ import axios from "axios";
 import "../Css/Verification.css";
 
 const API = "https://servitrust-baxkend.onrender.com/providers";
+const NOTIFICATION_API =
+  "https://servitrust-baxkend.onrender.com/notifications/provider-reminder";
 
 const Verification = () => {
   const [providers, setProviders] = useState([]);
@@ -17,24 +19,36 @@ const Verification = () => {
 
   const providersPerPage = 8;
 
+  // GET PENDING PROVIDERS
   const getPendingProviders = async () => {
     try {
       setLoading(true);
       setError("");
 
       const response = await axios.get(API);
+
       const data = Array.isArray(response.data)
         ? response.data
         : response.data.providers || [];
 
-      const pendingProviders = data.filter(
-        (provider) => provider.verificationStatus === "Pending"
-      );
+      // Missing verification status is treated as Pending.
+      const pendingProviders = data
+        .map((provider) => ({
+          ...provider,
+          verificationStatus: provider.verificationStatus || "Pending",
+        }))
+        .filter(
+          (provider) => provider.verificationStatus === "Pending"
+        );
 
       setProviders(pendingProviders);
     } catch (err) {
       console.error("GET VERIFICATION ERROR:", err);
-      setError("Unable to load pending providers. Please try again.");
+
+      setError(
+        err.response?.data?.message ||
+          "Unable to load pending providers. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -44,6 +58,7 @@ const Verification = () => {
     getPendingProviders();
   }, []);
 
+  // CLOSE MODAL WITH ESCAPE KEY
   useEffect(() => {
     if (!selectedProvider) return;
 
@@ -62,6 +77,7 @@ const Verification = () => {
     };
   }, [selectedProvider]);
 
+  // APPROVE OR REJECT PROVIDER
   const updateVerification = async (id, status) => {
     const actionText = status === "Verified" ? "approve" : "reject";
 
@@ -79,15 +95,12 @@ const Verification = () => {
         verificationStatus: status,
       });
 
+      // Remove the reviewed provider from this pending-only page.
       setProviders((previous) =>
         previous.filter((provider) => provider._id !== id)
       );
 
-      setSelectedProvider((previous) =>
-        previous?._id === id
-          ? { ...previous, verificationStatus: status }
-          : previous
-      );
+      setSelectedProvider(null);
 
       window.alert(
         status === "Verified"
@@ -106,15 +119,33 @@ const Verification = () => {
     }
   };
 
+  // PROVIDER NAME
   const getProviderName = (provider) =>
     provider.name || provider.fullName || "Unnamed Provider";
 
+  // SERVICE NAME
   const getServiceName = (provider) => {
+    if (Array.isArray(provider.services)) {
+      return provider.services.length
+        ? provider.services
+            .map((service) =>
+              typeof service === "object"
+                ? service.name || service.title || ""
+                : service
+            )
+            .filter(Boolean)
+            .join(", ")
+        : getServiceNameFromSingle(provider);
+    }
+
     if (typeof provider.service === "string") {
       return provider.service || "Not specified";
     }
 
-    if (provider.service && typeof provider.service === "object") {
+    if (
+      provider.service &&
+      typeof provider.service === "object"
+    ) {
       return (
         provider.service.name ||
         provider.service.title ||
@@ -125,12 +156,37 @@ const Verification = () => {
     return provider.serviceName || "Not specified";
   };
 
-  const getLocation = (provider) =>
-    provider.location || provider.serviceArea || "Not specified";
+  const getServiceNameFromSingle = (provider) => {
+    if (typeof provider.service === "string" && provider.service) {
+      return provider.service;
+    }
 
+    if (
+      provider.service &&
+      typeof provider.service === "object"
+    ) {
+      return (
+        provider.service.name ||
+        provider.service.title ||
+        "Not specified"
+      );
+    }
+
+    return provider.serviceName || "Not specified";
+  };
+
+  // LOCATION
+  const getLocation = (provider) =>
+    provider.location ||
+    provider.serviceArea ||
+    provider.address ||
+    "Not specified";
+
+  // AVAILABILITY
   const getAvailability = (provider) =>
     provider.availability || "Not specified";
 
+  // EXPERIENCE
   const getExperience = (provider) => {
     const value = provider.experience;
 
@@ -145,6 +201,7 @@ const Verification = () => {
       : `${text} years`;
   };
 
+  // PROVIDER IMAGE
   const getImage = (provider) =>
     provider.image ||
     provider.profileImage ||
@@ -152,14 +209,130 @@ const Verification = () => {
     provider.imageUrl ||
     "";
 
+  // CHECK MISSING PROFILE FIELDS
+  const getMissingProfileFields = (provider) => {
+    const checks = [
+      ["Name", provider.name || provider.fullName],
+      ["Phone", provider.phone],
+      ["Category", provider.category || provider.serviceCategory],
+      [
+        "Service",
+        provider.services ||
+          provider.service ||
+          provider.serviceName,
+      ],
+      [
+        "Location",
+        provider.location ||
+          provider.serviceArea ||
+          provider.address,
+      ],
+      ["Experience", provider.experience],
+      ["Description", provider.description || provider.about],
+    ];
+
+    return checks
+      .filter(([, value]) => {
+        if (value === undefined || value === null) return true;
+
+        if (typeof value === "string") {
+          return value.trim() === "";
+        }
+
+        if (Array.isArray(value)) {
+          return value.length === 0;
+        }
+
+        return false;
+      })
+      .map(([label]) => label);
+  };
+
+  // CHECK WHETHER PROFILE IS INCOMPLETE
+  const isProfileIncomplete = (provider) =>
+    getMissingProfileFields(provider).length > 0;
+
+  // SEND PROFILE COMPLETION NOTIFICATION
+  const sendProfileReminder = async (provider) => {
+    const missingFields = getMissingProfileFields(provider);
+
+    if (missingFields.length === 0) {
+      window.alert(
+        "This provider's profile appears complete. No reminder is needed."
+      );
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Send a profile-completion notification to ${getProviderName(
+        provider
+      )}?\n\nMissing information: ${missingFields.join(", ")}`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setUpdatingId(provider._id);
+      setError("");
+
+      // Use the token stored after admin login.
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        window.alert(
+          "Admin login token not found. Please log in again."
+        );
+        return;
+      }
+
+      // Call the new backend route.
+      const response = await axios.post(
+        NOTIFICATION_API,
+        {
+          providerId: provider._id,
+          title: "Complete your ServiTrust provider profile",
+          message: `Please complete your provider profile. Missing information: ${missingFields.join(
+            ", "
+          )}. Open your ServiTrust provider profile and fill in the missing details.`,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      window.alert(
+        response.data?.message ||
+          `Profile-completion notification sent to ${getProviderName(
+            provider
+          )}.`
+      );
+    } catch (err) {
+      console.error(
+        "SEND PROFILE REMINDER ERROR:",
+        err.response?.data || err.message
+      );
+
+      window.alert(
+        err.response?.data?.message ||
+          "Notification could not be sent. Check your admin token, backend route, and provider userId."
+      );
+    } finally {
+      setUpdatingId("");
+    }
+  };
+
+  // SERVICE FILTER OPTIONS
   const services = [
     ...new Set(
-      providers.map(getServiceName).filter(
-        (service) => service !== "Not specified"
-      )
+      providers
+        .map(getServiceName)
+        .filter((service) => service !== "Not specified")
     ),
   ];
 
+  // SEARCH AND FILTER
   const filteredProviders = providers.filter((provider) => {
     const searchText = search.toLowerCase();
 
@@ -188,6 +361,7 @@ const Verification = () => {
     );
   });
 
+  // PAGINATION
   const totalPages = Math.ceil(
     filteredProviders.length / providersPerPage
   );
@@ -204,6 +378,7 @@ const Verification = () => {
     startIndex + providersPerPage
   );
 
+  // RESET FILTERS
   const resetFilters = () => {
     setSearch("");
     setServiceFilter("");
@@ -220,16 +395,17 @@ const Verification = () => {
             PROVIDER MANAGEMENT
           </p>
 
-          <h1>Provider Verification</h1>
+          <h1>Pending Provider Verification</h1>
 
           <span>
-            Review provider information before approving registration.
+            Review registered provider profiles, request missing
+            information, and approve or reject pending providers.
           </span>
         </div>
 
         <div className="verification-count">
           <strong>{providers.length}</strong>
-          <span>Pending Verification</span>
+          <span>Pending Providers</span>
         </div>
       </div>
 
@@ -285,16 +461,18 @@ const Verification = () => {
         </button>
       </div>
 
+      {/* ERROR */}
       {error && (
         <div className="verification-error" role="alert">
           <span>{error}</span>
+
           <button type="button" onClick={getPendingProviders}>
             Retry
           </button>
         </div>
       )}
 
-      {/* TABLE */}
+      {/* PROVIDER TABLE */}
       <div className="verification-table-container">
         <table className="verification-table">
           <thead>
@@ -305,15 +483,16 @@ const Verification = () => {
               <th>Location</th>
               <th>Experience</th>
               <th>Availability</th>
+              <th>Profile Status</th>
               <th>Status</th>
-              <th>Action</th>
+              <th>Review</th>
             </tr>
           </thead>
 
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="8" className="no-pending">
+                <td colSpan="9" className="no-pending">
                   Loading providers...
                 </td>
               </tr>
@@ -331,8 +510,11 @@ const Verification = () => {
                           alt={getProviderName(provider)}
                           onError={(event) => {
                             event.currentTarget.style.display = "none";
-                            event.currentTarget.nextElementSibling.style.display =
-                              "flex";
+
+                            if (event.currentTarget.nextElementSibling) {
+                              event.currentTarget.nextElementSibling.style.display =
+                                "flex";
+                            }
                           }}
                         />
                       ) : null}
@@ -368,6 +550,27 @@ const Verification = () => {
                   </td>
 
                   <td>
+                    <span
+                      className={
+                        isProfileIncomplete(provider)
+                          ? "profile-incomplete"
+                          : "profile-complete"
+                      }
+                      title={
+                        isProfileIncomplete(provider)
+                          ? `Missing: ${getMissingProfileFields(
+                              provider
+                            ).join(", ")}`
+                          : "All checked profile fields are present"
+                      }
+                    >
+                      {isProfileIncomplete(provider)
+                        ? "Incomplete"
+                        : "Complete"}
+                    </span>
+                  </td>
+
+                  <td>
                     <span className="pending-status">
                       {provider.verificationStatus || "Pending"}
                     </span>
@@ -380,31 +583,7 @@ const Verification = () => {
                         className="verification-view-btn"
                         onClick={() => setSelectedProvider(provider)}
                       >
-                        View
-                      </button>
-
-                      <button
-                        type="button"
-                        className="approve-btn"
-                        disabled={updatingId === provider._id}
-                        onClick={() =>
-                          updateVerification(provider._id, "Verified")
-                        }
-                      >
-                        {updatingId === provider._id
-                          ? "Saving..."
-                          : "Approve"}
-                      </button>
-
-                      <button
-                        type="button"
-                        className="reject-btn"
-                        disabled={updatingId === provider._id}
-                        onClick={() =>
-                          updateVerification(provider._id, "Rejected")
-                        }
-                      >
-                        Reject
+                        View Profile
                       </button>
                     </div>
                   </td>
@@ -412,11 +591,12 @@ const Verification = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="8" className="no-pending">
+                <td colSpan="9" className="no-pending">
                   <strong>No pending providers found.</strong>
+
                   <span>
-                    All matching providers have been reviewed, or your
-                    filters returned no results.
+                    No providers awaiting verification match your
+                    search or selected filters.
                   </span>
                 </td>
               </tr>
@@ -524,17 +704,35 @@ const Verification = () => {
               <div className="verification-detail-grid">
                 <div className="verification-detail">
                   <span>Provider Name</span>
-                  <strong>{getProviderName(selectedProvider)}</strong>
+                  <strong>
+                    {getProviderName(selectedProvider)}
+                  </strong>
                 </div>
 
                 <div className="verification-detail">
                   <span>Phone</span>
-                  <strong>{selectedProvider.phone || "Not provided"}</strong>
+                  <strong>
+                    {selectedProvider.phone || "Not provided"}
+                  </strong>
                 </div>
 
                 <div className="verification-detail">
                   <span>Email</span>
-                  <strong>{selectedProvider.email || "Not provided"}</strong>
+                  <strong>
+                    {selectedProvider.email || "Not provided"}
+                  </strong>
+                </div>
+
+                <div className="verification-detail">
+                  <span>Category</span>
+                  <strong>
+                    {Array.isArray(selectedProvider.category)
+                      ? selectedProvider.category.join(", ") ||
+                        "Not provided"
+                      : selectedProvider.category ||
+                        selectedProvider.serviceCategory ||
+                        "Not provided"}
+                  </strong>
                 </div>
 
                 <div className="verification-detail">
@@ -582,8 +780,53 @@ const Verification = () => {
                   </p>
                 </div>
               </div>
+
+              {/* PROFILE COMPLETION AND NOTIFICATION */}
+              <section
+                className={`verification-profile-review ${
+                  isProfileIncomplete(selectedProvider)
+                    ? "incomplete"
+                    : "complete"
+                }`}
+              >
+                <div className="verification-profile-review-copy">
+                  <span className="verification-profile-review-eyebrow">
+                    PROFILE COMPLETION
+                  </span>
+
+                  <h3>
+                    {isProfileIncomplete(selectedProvider)
+                      ? "Profile needs attention"
+                      : "Profile information looks complete"}
+                  </h3>
+
+                  <p>
+                    {isProfileIncomplete(selectedProvider)
+                      ? `Missing information: ${getMissingProfileFields(
+                          selectedProvider
+                        ).join(", ")}`
+                      : "All profile fields checked by this page have been provided."}
+                  </p>
+                </div>
+
+                {isProfileIncomplete(selectedProvider) && (
+                  <button
+                    type="button"
+                    className="verification-send-notification-btn"
+                    disabled={updatingId === selectedProvider._id}
+                    onClick={() =>
+                      sendProfileReminder(selectedProvider)
+                    }
+                  >
+                    {updatingId === selectedProvider._id
+                      ? "Sending notification..."
+                      : "Send Completion Notification"}
+                  </button>
+                )}
+              </section>
             </div>
 
+            {/* APPROVE / REJECT */}
             {selectedProvider.verificationStatus === "Pending" && (
               <div className="verification-modal-actions">
                 <button
@@ -591,7 +834,10 @@ const Verification = () => {
                   className="approve-btn"
                   disabled={updatingId === selectedProvider._id}
                   onClick={() =>
-                    updateVerification(selectedProvider._id, "Verified")
+                    updateVerification(
+                      selectedProvider._id,
+                      "Verified"
+                    )
                   }
                 >
                   Approve Provider
@@ -602,7 +848,10 @@ const Verification = () => {
                   className="reject-btn"
                   disabled={updatingId === selectedProvider._id}
                   onClick={() =>
-                    updateVerification(selectedProvider._id, "Rejected")
+                    updateVerification(
+                      selectedProvider._id,
+                      "Rejected"
+                    )
                   }
                 >
                   Reject Provider

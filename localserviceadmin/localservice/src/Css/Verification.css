@@ -680,3 +680,261 @@
     padding: 15px 20px;
   }
 }
+
+
+
+
+
+/* Provider profile completion status */
+.profile-incomplete,
+.profile-complete {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.profile-incomplete {
+  background: #fff0d6;
+  color: #945900;
+}
+
+.profile-complete {
+  background: #e1f6e9;
+  color: #187443;
+}
+
+/* Reminder action */
+.send-reminder-btn {
+  border: 1px solid #b7d9d5;
+  border-radius: 7px;
+  padding: 7px 10px;
+  background: #e8f7f5;
+  color: #126b65;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.send-reminder-btn:hover {
+  background: #d4efeb;
+}
+
+.send-reminder-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+
+
+
+
+
+
+
+
+
+/* Add this file after Verification.css in Verification.jsx */
+.verification-profile-review {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin: 4px 0 24px;
+  padding: 20px 22px;
+  border: 1px solid #dbe7e7;
+  border-radius: 16px;
+  background: #f7fbfb;
+}
+.verification-profile-review.incomplete {
+  border-color: #f2d7a0;
+  background: #fffaf0;
+}
+.verification-profile-review.complete {
+  border-color: #b9e4d2;
+  background: #f1fbf6;
+}
+.verification-profile-review-copy { min-width: 0; }
+.verification-profile-review-eyebrow {
+  display: block;
+  margin-bottom: 7px;
+  color: #587272;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+.verification-profile-review h3 {
+  margin: 0 0 6px;
+  color: #183d3d;
+  font-size: 17px;
+  font-weight: 750;
+}
+.verification-profile-review p {
+  margin: 0;
+  color: #5f6f70;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.verification-send-notification-btn {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 11px 16px;
+  border: 0;
+  border-radius: 10px;
+  background: #087f8c;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .2s ease, transform .2s ease;
+}
+.verification-send-notification-btn:hover { background: #066873; }
+.verification-send-notification-btn:active { transform: translateY(1px); }
+.verification-send-notification-btn:disabled { opacity: .6; cursor: not-allowed; }
+.verification-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow-y: auto;
+  background: rgba(13, 32, 35, .58);
+  backdrop-filter: blur(5px);
+}
+.verification-modal {
+  width: min(900px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  border: 1px solid rgba(219, 231, 231, .9);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 24px 80px rgba(10, 38, 42, .24);
+}
+.verification-modal-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 24px 28px;
+  border-bottom: 1px solid #e7eeee;
+  background: rgba(255, 255, 255, .97);
+}
+.verification-modal-header p {
+  margin: 0 0 7px;
+  color: #07808b;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .13em;
+}
+.verification-modal-header h2 {
+  margin: 0 0 7px;
+  color: #183d3d;
+  font-size: clamp(21px, 3vw, 28px);
+  font-weight: 750;
+  overflow-wrap: anywhere;
+}
+.verification-modal-header span { color: #718182; font-size: 12px; overflow-wrap: anywhere; }
+.verification-modal-close {
+  display: grid;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid #e1e9e9;
+  border-radius: 12px;
+  background: #f7fafa;
+  color: #365354;
+  font-size: 27px;
+  cursor: pointer;
+}
+.verification-modal-body { padding: 24px 28px; }
+.verification-profile-image-wrap { margin-bottom: 22px; }
+.verification-profile-image-wrap img {
+  width: 100px;
+  height: 100px;
+  border: 4px solid #e8f4f3;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.verification-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.verification-detail {
+  min-width: 0;
+  padding: 15px 16px;
+  border: 1px solid #e6eeee;
+  border-radius: 12px;
+  background: #fbfdfd;
+}
+.verification-detail > span {
+  display: block;
+  margin-bottom: 7px;
+  color: #718182;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.verification-detail strong,
+.verification-detail p {
+  display: block;
+  margin: 0;
+  color: #263f40;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.verification-detail.full-width { grid-column: 1 / -1; }
+.verification-profile-review { margin-top: 22px; }
+.verification-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 18px 28px;
+  border-top: 1px solid #e7eeee;
+}
+.verification-modal-actions button,
+.verification-modal-footer button {
+  min-height: 43px;
+  padding: 10px 17px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+}
+.verification-modal-actions button:disabled { opacity: .6; cursor: not-allowed; }
+.verification-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 28px 22px;
+}
+.verification-modal-footer button {
+  border: 1px solid #dce7e7;
+  background: #fff;
+  color: #426061;
+}
+@media (max-width: 640px) {
+  .verification-modal-overlay { align-items: flex-start; padding: 10px; }
+  .verification-modal { max-height: calc(100vh - 20px); border-radius: 15px; }
+  .verification-modal-header, .verification-modal-body { padding: 18px; }
+  .verification-detail-grid { grid-template-columns: minmax(0, 1fr); }
+  .verification-detail.full-width { grid-column: auto; }
+  .verification-profile-review { align-items: stretch; flex-direction: column; padding: 16px; }
+  .verification-send-notification-btn { width: 100%; }
+  .verification-modal-actions { flex-direction: column; padding: 16px 18px; }
+  .verification-modal-actions button { width: 100%; }
+  .verification-modal-footer { padding: 0 18px 18px; }
+}
+
