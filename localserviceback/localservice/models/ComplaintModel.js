@@ -15,7 +15,7 @@ const complaintSchema = new mongoose.Schema(
 
     provider: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Provider",
+      ref: "providers",
       default: null,
     },
 
