@@ -766,6 +766,10 @@ app.get("/providers/:id", async (req, res) => {
     }
 
     const user = await User.findById(provider.userId);
+    console.log("PROVIDER ID:", provider._id);
+console.log("LINKED USER ID:", provider.userId);
+console.log("LINKED USER DATA:", user);
+
 
     res.json({
       ...provider.toObject(),
