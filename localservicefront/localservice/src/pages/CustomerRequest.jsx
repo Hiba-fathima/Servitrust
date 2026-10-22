@@ -5,7 +5,6 @@ import React, {
   useState,
 } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
 import {
   FaTimes,
   FaExclamationCircle,
@@ -44,10 +43,9 @@ function CustomerRequests() {
   const [reviewText, setReviewText] = useState("");
   const [reviewLoading, setReviewLoading] = useState(false);
 
-  // IDs of requests already reviewed during this session
+  // Requests reviewed during the current session
   const [reviewedRequestIds, setReviewedRequestIds] = useState([]);
 
-  const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
   const user = useMemo(() => {
@@ -70,6 +68,80 @@ function CustomerRequests() {
     }),
     [token]
   );
+
+  // Get the request ID
+  const getRequestId = (request) =>
+    request?._id || request?.id || "";
+
+  // Get the service name
+  const getServiceName = (request) =>
+    request?.serviceName ||
+    request?.service?.name ||
+    request?.service?.serviceName ||
+    (typeof request?.service === "string"
+      ? request.service
+      : null) ||
+    "Service Request";
+
+  // Get provider name
+  const getProviderName = (request) =>
+    request?.providerName ||
+    request?.provider?.name ||
+    request?.provider?.fullName ||
+    request?.provider?.businessName ||
+    "Not assigned";
+
+  // Get status
+  const getStatus = (request) =>
+    request?.status ||
+    request?.requestStatus ||
+    request?.bookingStatus ||
+    "Pending";
+
+  // Normalize status
+  const normalizeStatus = (status) =>
+    String(status || "Pending").trim().toLowerCase();
+
+  // Status CSS class
+  const getStatusClass = (status) => {
+    switch (normalizeStatus(status)) {
+      case "accepted":
+        return "status-accepted";
+      case "rejected":
+        return "status-rejected";
+      case "in progress":
+        return "status-progress";
+      case "completed":
+        return "status-completed";
+      case "cancelled":
+        return "status-cancelled";
+      default:
+        return "status-pending";
+    }
+  };
+
+  // Format date
+  const formatDate = (date) => {
+    if (!date) return "Not specified";
+
+    const parsedDate = new Date(date);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return String(date);
+    }
+
+    return parsedDate.toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  // Allow cancellation for eligible statuses
+  const canCancel = (request) =>
+    ["pending", "accepted", "in progress"].includes(
+      normalizeStatus(getStatus(request))
+    );
 
   // Load requests for the logged-in customer
   const fetchRequests = useCallback(async () => {
@@ -104,6 +176,7 @@ function CustomerRequests() {
       setRequests(data);
     } catch (err) {
       console.error("Error fetching requests:", err);
+
       setError(
         err.response?.data?.message ||
           "Unable to load your requests. Please try again."
@@ -117,73 +190,9 @@ function CustomerRequests() {
     fetchRequests();
 
     const interval = setInterval(fetchRequests, 30000);
+
     return () => clearInterval(interval);
   }, [fetchRequests]);
-
-  const getRequestId = (request) =>
-    request?._id || request?.id;
-
-  const getServiceName = (request) =>
-    request?.serviceName ||
-    request?.service?.name ||
-    request?.service?.serviceName ||
-    (typeof request?.service === "string"
-      ? request.service
-      : null) ||
-    "Service Request";
-
-  const getProviderName = (request) =>
-    request?.providerName ||
-    request?.provider?.name ||
-    request?.provider?.fullName ||
-    request?.provider?.businessName ||
-    "Not assigned";
-
-  const getStatus = (request) =>
-    request?.status ||
-    request?.requestStatus ||
-    request?.bookingStatus ||
-    "Pending";
-
-  const normalizeStatus = (status) =>
-    String(status || "Pending").trim().toLowerCase();
-
-  const getStatusClass = (status) => {
-    switch (normalizeStatus(status)) {
-      case "accepted":
-        return "status-accepted";
-      case "rejected":
-        return "status-rejected";
-      case "in progress":
-        return "status-progress";
-      case "completed":
-        return "status-completed";
-      case "cancelled":
-        return "status-cancelled";
-      default:
-        return "status-pending";
-    }
-  };
-
-  const formatDate = (date) => {
-    if (!date) return "Not specified";
-
-    const parsedDate = new Date(date);
-    if (Number.isNaN(parsedDate.getTime())) {
-      return String(date);
-    }
-
-    return parsedDate.toLocaleDateString("en-IN", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  };
-
-  const canCancel = (request) =>
-    ["pending", "accepted", "in progress"].includes(
-      normalizeStatus(getStatus(request))
-    );
 
   // Cancel request
   const handleCancelRequest = async (request) => {
@@ -191,15 +200,13 @@ function CustomerRequests() {
 
     if (!requestId || cancellingId) return;
 
-    if (
-      !window.confirm(
-        `Are you sure you want to cancel your ${getServiceName(
-          request
-        )} request?`
-      )
-    ) {
-      return;
-    }
+    const confirmed = window.confirm(
+      `Are you sure you want to cancel your ${getServiceName(
+        request
+      )} request?`
+    );
+
+    if (!confirmed) return;
 
     setCancellingId(requestId);
     setError("");
@@ -233,6 +240,7 @@ function CustomerRequests() {
       setSuccess("Your service request has been cancelled.");
     } catch (err) {
       console.error("Error cancelling request:", err);
+
       setError(
         err.response?.data?.message ||
           "Unable to cancel this request. Please try again."
@@ -242,7 +250,7 @@ function CustomerRequests() {
     }
   };
 
-  // Open complaint modal
+  // Open complaint form
   const openComplaintForm = (request) => {
     setSelectedRequest(request);
     setComplaintCategory("Service Quality");
@@ -253,6 +261,7 @@ function CustomerRequests() {
     setShowComplaintForm(true);
   };
 
+  // Close complaint form
   const closeComplaintForm = () => {
     if (complaintLoading) return;
 
@@ -263,7 +272,7 @@ function CustomerRequests() {
     setComplaintDescription("");
   };
 
-  // Submit complaint separately from review
+  // Submit complaint
   const submitComplaint = async (event) => {
     event.preventDefault();
 
@@ -274,10 +283,7 @@ function CustomerRequests() {
       return;
     }
 
-    if (
-      !complaintSubject.trim() ||
-      !complaintDescription.trim()
-    ) {
+    if (!complaintSubject.trim() || !complaintDescription.trim()) {
       setError("Please enter a subject and complaint description.");
       return;
     }
@@ -289,6 +295,8 @@ function CustomerRequests() {
     try {
       const provider =
         selectedRequest?.provider?._id ||
+        selectedRequest?.provider?.id ||
+        selectedRequest?.providerId ||
         selectedRequest?.provider ||
         undefined;
 
@@ -306,9 +314,11 @@ function CustomerRequests() {
 
       setShowComplaintForm(false);
       setSelectedRequest(null);
+
       setSuccess("Your complaint has been submitted successfully.");
     } catch (err) {
       console.error("Complaint submission error:", err);
+
       setError(
         err.response?.data?.message ||
           "Unable to submit your complaint. Please try again."
@@ -318,9 +328,14 @@ function CustomerRequests() {
     }
   };
 
-  // Open review modal
+  // Open review form
   const openReviewForm = (request) => {
     const requestId = getRequestId(request);
+
+    if (!requestId) {
+      setError("Unable to identify this service request.");
+      return;
+    }
 
     if (reviewedRequestIds.includes(requestId)) {
       setError("You have already submitted a review for this request.");
@@ -335,6 +350,7 @@ function CustomerRequests() {
     setShowReviewForm(true);
   };
 
+  // Close review form
   const closeReviewForm = () => {
     if (reviewLoading) return;
 
@@ -344,7 +360,7 @@ function CustomerRequests() {
     setReviewText("");
   };
 
-  // Submit review to the separate reviews API
+  // Submit review
   const submitReview = async (event) => {
     event.preventDefault();
 
@@ -355,13 +371,27 @@ function CustomerRequests() {
       return;
     }
 
+    if (!customerId) {
+      setError(
+        "Customer ID was not found. Please log out and log in again."
+      );
+      return;
+    }
+
     if (rating < 1 || rating > 5) {
       setError("Please select a rating from 1 to 5 stars.");
       return;
     }
 
-    if (reviewText.trim().length < 5) {
+    const trimmedReview = reviewText.trim();
+
+    if (trimmedReview.length < 5) {
       setError("Please write a review of at least 5 characters.");
+      return;
+    }
+
+    if (reviewedRequestIds.includes(requestId)) {
+      setError("You have already submitted a review for this request.");
       return;
     }
 
@@ -372,38 +402,53 @@ function CustomerRequests() {
     try {
       const request = selectedReviewRequest;
 
+      // Extract provider ID from the service request
       const providerId =
         request?.provider?._id ||
         request?.provider?.id ||
         request?.providerId ||
-        request?.provider ||
-        undefined;
+        (typeof request?.provider === "string"
+          ? request.provider
+          : undefined);
 
+      // Extract service ID when available
       const serviceId =
         request?.service?._id ||
         request?.service?.id ||
         request?.serviceId ||
         undefined;
 
-      // This endpoint must be implemented in the backend.
-      await axios.post(
+      if (!providerId) {
+        throw new Error(
+          "The provider ID is missing from this service request. Please refresh your requests and try again."
+        );
+      }
+
+      /*
+       * IMPORTANT:
+       * The backend expects customer, serviceRequestId, provider,
+       * rating and comment. The customer field was missing before.
+       */
+      const response = await axios.post(
         `${API}/reviews`,
         {
           serviceRequestId: requestId,
-          bookingId: requestId,
+          customer: customerId,
           provider: providerId,
-          service: serviceId,
-          rating,
-          comment: reviewText.trim(),
-          review: reviewText.trim(),
+          ...(serviceId ? { service: serviceId } : {}),
+          rating: Number(rating),
+          comment: trimmedReview,
         },
         { headers: authHeaders }
       );
 
-      setReviewedRequestIds((previous) => [
-        ...previous,
-        requestId,
-      ]);
+      console.log("Review submitted:", response.data);
+
+      setReviewedRequestIds((previous) =>
+        previous.includes(requestId)
+          ? previous
+          : [...previous, requestId]
+      );
 
       setShowReviewForm(false);
       setSelectedReviewRequest(null);
@@ -416,11 +461,15 @@ function CustomerRequests() {
         )} has been submitted successfully.`
       );
     } catch (err) {
-      console.error("Review submission error:", err);
+      console.error(
+        "Review submission error:",
+        err.response?.data || err.message || err
+      );
 
       setError(
         err.response?.data?.message ||
-          "Unable to submit your review. Please check that the backend reviews API is configured."
+          err.message ||
+          "Unable to submit your review. Please try again."
       );
     } finally {
       setReviewLoading(false);
@@ -429,6 +478,7 @@ function CustomerRequests() {
 
   const handleReview = (request) => openReviewForm(request);
 
+  // Filter requests by status
   const filteredRequests = useMemo(() => {
     const sorted = [...requests].sort(
       (a, b) =>
@@ -459,12 +509,14 @@ function CustomerRequests() {
         </div>
       </header>
 
+      {/* Error message */}
       {error && (
         <div
           className="dashboard-alert dashboard-alert-error"
           role="alert"
         >
           <span>{error}</span>
+
           <button
             type="button"
             aria-label="Dismiss error"
@@ -475,12 +527,14 @@ function CustomerRequests() {
         </div>
       )}
 
+      {/* Success message */}
       {success && (
         <div
           className="dashboard-alert dashboard-alert-success"
           role="status"
         >
           <span>{success}</span>
+
           <button
             type="button"
             aria-label="Dismiss message"
@@ -491,6 +545,7 @@ function CustomerRequests() {
         </div>
       )}
 
+      {/* Summary */}
       <section className="customer-summary">
         <div className="summary-item">
           <span className="summary-label">Total Requests</span>
@@ -534,12 +589,15 @@ function CustomerRequests() {
         </div>
       </section>
 
+      {/* Requests section */}
       <section className="customer-requests-section">
         <div className="requests-section-heading">
           <div>
             <span className="customer-eyebrow">YOUR BOOKINGS</span>
             <h2>My Service Requests</h2>
-            <p>Track your service bookings and check their latest status.</p>
+            <p>
+              Track your service bookings and check their latest status.
+            </p>
           </div>
 
           <div className="my-requests-controls">
@@ -581,6 +639,7 @@ function CustomerRequests() {
                 ? "No service requests yet"
                 : "No requests found"}
             </h3>
+
             <p>
               {requests.length === 0
                 ? "Your service bookings will appear here."
@@ -612,6 +671,7 @@ function CustomerRequests() {
 
                     <div className="request-main-info">
                       <h3>{getServiceName(request)}</h3>
+
                       <span className="request-id">
                         Request ID:{" "}
                         {String(requestId || "N/A").slice(-8)}
@@ -709,7 +769,7 @@ function CustomerRequests() {
                         </button>
                       )}
 
-                      {/* Review button is now visible for every status */}
+                      {/* Review is available for every request status */}
                       <button
                         type="button"
                         className="review-request-button"
@@ -717,6 +777,7 @@ function CustomerRequests() {
                         disabled={alreadyReviewed}
                       >
                         <FaStar />
+
                         {alreadyReviewed
                           ? "Review Submitted"
                           : "Write Review"}
@@ -750,8 +811,10 @@ function CustomerRequests() {
               <div>
                 <span className="customer-eyebrow">CUSTOMER SUPPORT</span>
                 <h2 id="complaint-modal-title">Raise a Complaint</h2>
+
                 <p>
-                  Service: <strong>{getServiceName(selectedRequest)}</strong>
+                  Service:{" "}
+                  <strong>{getServiceName(selectedRequest)}</strong>
                 </p>
               </div>
 
@@ -767,7 +830,10 @@ function CustomerRequests() {
             </div>
 
             <form onSubmit={submitComplaint}>
-              <label htmlFor="complaint-category">Complaint Category</label>
+              <label htmlFor="complaint-category">
+                Complaint Category
+              </label>
+
               <select
                 id="complaint-category"
                 value={complaintCategory}
@@ -777,7 +843,9 @@ function CustomerRequests() {
                 required
               >
                 <option value="Service Quality">Service Quality</option>
-                <option value="Provider Behaviour">Provider Behaviour</option>
+                <option value="Provider Behaviour">
+                  Provider Behaviour
+                </option>
                 <option value="Payment Issue">Payment Issue</option>
                 <option value="Incomplete Work">Incomplete Work</option>
                 <option value="Delay in Service">Delay in Service</option>
@@ -785,6 +853,7 @@ function CustomerRequests() {
               </select>
 
               <label htmlFor="complaint-subject">Subject</label>
+
               <input
                 id="complaint-subject"
                 value={complaintSubject}
@@ -800,6 +869,7 @@ function CustomerRequests() {
               <label htmlFor="complaint-description">
                 Complaint Description
               </label>
+
               <textarea
                 id="complaint-description"
                 value={complaintDescription}
@@ -828,7 +898,9 @@ function CustomerRequests() {
                   className="complaint-submit-button"
                   disabled={complaintLoading}
                 >
-                  {complaintLoading ? "Submitting..." : "Submit Complaint"}
+                  {complaintLoading
+                    ? "Submitting..."
+                    : "Submit Complaint"}
                 </button>
               </div>
             </form>
@@ -856,12 +928,14 @@ function CustomerRequests() {
               <div>
                 <span className="customer-eyebrow">YOUR FEEDBACK</span>
                 <h2 id="review-modal-title">Write a Review</h2>
+
                 <p>
                   Service:{" "}
                   <strong>
                     {getServiceName(selectedReviewRequest)}
                   </strong>
                 </p>
+
                 <p>
                   Provider:{" "}
                   <strong>
@@ -942,7 +1016,10 @@ function CustomerRequests() {
                   disabled={reviewLoading}
                 >
                   <FaStar />
-                  {reviewLoading ? "Submitting..." : "Submit Review"}
+
+                  {reviewLoading
+                    ? "Submitting..."
+                    : "Submit Review"}
                 </button>
               </div>
             </form>
