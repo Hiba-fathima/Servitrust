@@ -5,7 +5,7 @@ const mongoose = require("mongoose");
 const Review = require("../models/ReviewModel");
 const ServiceRequest = require("../models/RequestModel");
 const Provider = require("../models/ProviderModel");
-const { verifyToken } = require("../middleware/auth");
+// const { verifyToken } = require("../middleware/auth");
 
 // GET ALL REVIEWS
 router.get("/", async (req, res) => {
