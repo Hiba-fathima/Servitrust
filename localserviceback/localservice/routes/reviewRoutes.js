@@ -1,41 +1,221 @@
 const express = require("express");
 const router = express.Router();
+
+const mongoose = require("mongoose");
 const Review = require("../models/ReviewModel");
+const ServiceRequest = require("../models/RequestModel");
+const Provider = require("../models/ProviderModel");
+const { verifyToken } = require("../middleware/auth");
 
-
-// Get all reviews
+// GET ALL REVIEWS
 router.get("/", async (req, res) => {
   try {
-    const reviews = await Review.find().sort({ createdAt: -1 });
+    const reviews = await Review.find()
+      .populate("customer", "name")
+      .populate("provider")
+      .populate("service")
+      .sort({ createdAt: -1 });
 
     res.json({
       success: true,
-      reviews
+      reviews,
     });
   } catch (error) {
+    console.error("GET REVIEWS ERROR:", error);
+
     res.status(500).json({
       success: false,
-      message: "Failed to fetch reviews"
+      message: "Failed to fetch reviews",
+    });
+  }
+});
+
+// SUBMIT REVIEW
+router.post("/", async (req, res) => {
+  try {
+    const {
+      serviceRequestId,
+      customer,
+      provider,
+      service,
+      rating,
+      comment,
+    } = req.body;
+
+    if (
+      !serviceRequestId ||
+      !customer ||
+      !provider ||
+      !rating ||
+      !comment?.trim()
+    ) {
+      return res.status(400).json({
+        message: "Please provide all required review fields.",
+      });
+    }
+
+    if (
+      !mongoose.isValidObjectId(serviceRequestId) ||
+      !mongoose.isValidObjectId(customer) ||
+      !mongoose.isValidObjectId(provider)
+    ) {
+      return res.status(400).json({
+        message: "Invalid review ID.",
+      });
+    }
+
+    if (
+      !Number.isInteger(Number(rating)) ||
+      Number(rating) < 1 ||
+      Number(rating) > 5
+    ) {
+      return res.status(400).json({
+        message: "Rating must be between 1 and 5.",
+      });
+    }
+
+    const request = await ServiceRequest.findById(
+      serviceRequestId
+    );
+
+    if (!request) {
+      return res.status(404).json({
+        message: "Service request not found.",
+      });
+    }
+
+    if (String(request.customerId) !== String(customer)) {
+      return res.status(403).json({
+        message: "This request does not belong to this customer.",
+      });
+    }
+
+    if (String(request.providerId) !== String(provider)) {
+      return res.status(400).json({
+        message: "Provider does not match the service request.",
+      });
+    }
+
+    if (request.status !== "Completed") {
+      return res.status(400).json({
+        message: "Only completed services can be reviewed.",
+      });
+    }
+
+    const existingReview = await Review.findOne({
+      serviceRequestId,
+    });
+
+    if (existingReview) {
+      return res.status(409).json({
+        message: "You have already reviewed this service.",
+      });
+    }
+
+    const review = await Review.create({
+      serviceRequestId,
+      customer,
+      provider,
+      service: service || undefined,
+      rating: Number(rating),
+      comment: comment.trim(),
+    });
+
+    // Update the provider's average rating.
+    const providerReviews = await Review.find({ provider });
+
+    const averageRating =
+      providerReviews.reduce(
+        (sum, item) => sum + item.rating,
+        0
+      ) / providerReviews.length;
+
+    await Provider.findByIdAndUpdate(provider, {
+      averageRating: Number(averageRating.toFixed(1)),
+    });
+
+    const populatedReview = await Review.findById(review._id)
+      .populate("customer", "name")
+      .populate("service");
+
+    return res.status(201).json({
+      success: true,
+      message: "Review submitted successfully.",
+      review: populatedReview,
+    });
+  } catch (error) {
+    console.error("SUBMIT REVIEW ERROR:", error);
+
+    return res.status(500).json({
+      message: "Failed to submit review.",
+      error: error.message,
+    });
+  }
+});
+
+// GET REVIEWS FOR ONE PROVIDER
+router.get("/provider/:providerId", async (req, res) => {
+  try {
+    const { providerId } = req.params;
+
+    if (!mongoose.isValidObjectId(providerId)) {
+      return res.status(400).json({
+        message: "Invalid provider ID.",
+      });
+    }
+
+    const reviews = await Review.find({
+      provider: providerId,
+    })
+      .populate("customer", "name")
+      .populate("service")
+      .sort({ createdAt: -1 });
+
+    const averageRating =
+      reviews.length > 0
+        ? reviews.reduce((sum, item) => sum + item.rating, 0) /
+          reviews.length
+        : 0;
+
+    res.json({
+      success: true,
+      reviews,
+      averageRating: Number(averageRating.toFixed(1)),
+      totalReviews: reviews.length,
+    });
+  } catch (error) {
+    console.error("GET PROVIDER REVIEWS ERROR:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch provider reviews.",
     });
   }
 });
 
 
-// Get reviews for one provider
-router.get("/provider/:providerId", async (req, res) => {
+
+// Get reviews submitted by a specific customer
+router.get("/customer/:customerId", async (req, res) => {
   try {
     const reviews = await Review.find({
-      provider: req.params.providerId
-    }).sort({ createdAt: -1 });
+      customer: req.params.customerId,
+    })
+      .populate("provider", "userId averageRating")
+      .populate("service", "name")
+      .sort({ createdAt: -1 });
 
-    res.json({
+    res.status(200).json({
       success: true,
-      reviews
+      totalReviews: reviews.length,
+      reviews,
     });
   } catch (error) {
+    console.error("Fetch customer reviews error:", error);
+
     res.status(500).json({
       success: false,
-      message: "Failed to fetch provider reviews"
+      message: "Failed to fetch customer reviews",
     });
   }
 });
