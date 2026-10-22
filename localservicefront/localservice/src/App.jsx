@@ -23,7 +23,7 @@ import ProviderServices from './pages/ProvideServices'
 import MyComplaints from './pages/MyComplaints'
 import CustomerRequests from './pages/CustomerRequest'
 import ProviderComplaints from './pages/ProviderComplaint'
-import ProviderReviews from './pages/PRoviderReviews'
+// import ProviderReviews from './pages/PRoviderReviews'
 
 function App() {
   return (
@@ -128,7 +128,7 @@ function App() {
     </div>
   }
 />
-<Route
+{/* <Route
   path="/provider/reviews"
   element={
     <div className="provider-layout">
@@ -136,7 +136,7 @@ function App() {
       <ProviderReviews />
     </div>
   }
-/>
+/> */}
 
 
 <Route
