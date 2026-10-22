@@ -15,6 +15,7 @@ import Categories from './Pages/Categories'
 import Complaints from './Pages/Complaint'
 import NotificationBell from './Pages/NotificationBell'
 import Notifications from './Pages/Notification'
+import Reviews from './Pages/Reviews'
 
 
 function App() {
@@ -38,12 +39,15 @@ function App() {
 
 <Route path="/categories" element={<Categories />} />
 <Route path="/admin/complaints" element={<Complaints />} />
+<Route path="/admin/reviews" element={<Reviews />} />
+
 <Route
   path="/notifications"
   element={<NotificationBell />}
   
 />
 <Route path="/notifications" element={<Notifications />} />
+
       </Routes>
     </>
   )

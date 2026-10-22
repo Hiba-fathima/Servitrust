@@ -1,75 +1,140 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
-import {
-  FaBell,
-  FaCheck,
-  FaCheckDouble,
-  FaTimes,
-  FaUser,
-  FaTools,
-  FaInfoCircle,
-} from "react-icons/fa";
+import { FaBell, FaCheck, FaTimes } from "react-icons/fa";
 import "../Css/NotificationBell.css";
 
 const API_URL =
   import.meta.env.VITE_API_URL ||
   "https://servitrust-baxkend.onrender.com";
 
-function NotificationBell() {
-  const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
+const NotificationBell = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [readIds, setReadIds] = useState([]);
 
   const dropdownRef = useRef(null);
 
-  const fetchNotifications = async () => {
-    const token = localStorage.getItem("token");
+  const unreadCount = notifications.filter(
+    (notification) => !readIds.includes(notification.id)
+  ).length;
 
-    if (!token) {
-      setError("Please log in to view notifications.");
-      setNotifications([]);
-      setUnreadCount(0);
-      return;
-    }
+  // Load dashboard activity when the bell is clicked.
+  const fetchNotifications = async () => {
+    setLoading(true);
+    setError("");
+
+    const endpoints = [
+      { path: "/service-requests", type: "Service Request" },
+      { path: "/complaints", type: "Complaint" },
+      { path: "/reviews", type: "Review" },
+      { path: "/users", type: "New User" },
+    ];
 
     try {
-      setLoading(true);
-      setError("");
+      const results = await Promise.allSettled(
+        endpoints.map(({ path }) => axios.get(`${API_URL}${path}`))
+      );
 
-      const response = await axios.get(`${API_URL}/notifications`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const activity = [];
+
+      results.forEach((result, index) => {
+        if (result.status !== "fulfilled") {
+          console.error(
+            `Unable to load ${endpoints[index].type} notifications`,
+            result.reason
+          );
+          return;
+        }
+
+        const data = result.value.data;
+        const records = Array.isArray(data)
+          ? data
+          : data?.requests ||
+            data?.complaints ||
+            data?.reviews ||
+            data?.users ||
+            [];
+
+        if (!Array.isArray(records)) return;
+
+        records.forEach((item) => {
+          const id = item._id || item.id;
+          if (!id) return;
+
+          const createdAt =
+            item.createdAt || item.updatedAt || item.date || null;
+
+          let title = endpoints[index].type;
+          let message = "";
+
+          switch (endpoints[index].type) {
+            case "Service Request":
+              title = "New service request";
+              message =
+                item.serviceName ||
+                item.service?.name ||
+                item.description ||
+                "A customer submitted a service request.";
+              break;
+
+            case "Complaint":
+              title = "New complaint";
+              message =
+                item.subject ||
+                item.category ||
+                "A customer submitted a complaint.";
+              break;
+
+            case "Review":
+              title = "New review";
+              message = item.comment || item.review || "A customer submitted a review.";
+              break;
+
+            case "New User":
+              title = "New user registered";
+              message =
+                item.name || item.email || "A new user registered.";
+              break;
+
+            default:
+              break;
+          }
+
+          activity.push({
+            id: `${endpoints[index].type}-${id}`,
+            title,
+            message,
+            createdAt,
+            type: endpoints[index].type,
+          });
+        });
       });
 
-      const data = response.data;
-      const list = Array.isArray(data.notifications)
-        ? data.notifications
-        : [];
+      // Most recent activity first.
+      activity.sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
 
-      setNotifications(list);
-      setUnreadCount(
-        typeof data.unreadCount === "number"
-          ? data.unreadCount
-          : list.filter((item) => !item.isRead).length
-      );
+      setNotifications(activity.slice(0, 30));
     } catch (err) {
-      console.error("Unable to fetch notifications:", err);
-      setError(
-        err.response?.data?.message || "Unable to load notifications."
-      );
+      console.error("Notification loading error:", err);
+      setError("Unable to load notifications.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchNotifications();
+    if (isOpen) {
+      fetchNotifications();
+    }
+  }, [isOpen]);
 
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
+  // Close the dropdown when clicking outside.
   useEffect(() => {
     const handleOutsideClick = (event) => {
       if (
@@ -81,94 +146,36 @@ function NotificationBell() {
     };
 
     document.addEventListener("mousedown", handleOutsideClick);
-    return () =>
+
+    return () => {
       document.removeEventListener("mousedown", handleOutsideClick);
+    };
   }, []);
 
-  const toggleDropdown = () => {
-    const open = !isOpen;
-    setIsOpen(open);
-
-    if (open) {
-      fetchNotifications();
-    }
+  const markAsRead = (id) => {
+    setReadIds((previous) =>
+      previous.includes(id) ? previous : [...previous, id]
+    );
   };
 
-  const markAsRead = async (id) => {
-    const token = localStorage.getItem("token");
-    const selected = notifications.find((item) => item._id === id);
-
-    if (!token || !selected || selected.isRead) return;
-
-    try {
-      await axios.patch(
-        `${API_URL}/notifications/${id}/read`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      setNotifications((previous) =>
-        previous.map((item) =>
-          item._id === id
-            ? { ...item, isRead: true, readAt: new Date().toISOString() }
-            : item
-        )
-      );
-
-      setUnreadCount((count) => Math.max(0, count - 1));
-    } catch (err) {
-      console.error("Unable to mark notification as read:", err);
-      setError("Could not update notification. Please try again.");
-    }
+  const markAllAsRead = () => {
+    setReadIds((previous) => [
+      ...new Set([
+        ...previous,
+        ...notifications.map((notification) => notification.id),
+      ]),
+    ]);
   };
 
-  const markAllAsRead = async () => {
-    const token = localStorage.getItem("token");
+  const formatTime = (date) => {
+    if (!date) return "Recent activity";
 
-    if (!token || unreadCount === 0) return;
+    const parsed = new Date(date);
 
-    try {
-      await axios.patch(
-        `${API_URL}/notifications/read-all`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+    if (Number.isNaN(parsed.getTime())) return "Recent activity";
 
-      setNotifications((previous) =>
-        previous.map((item) => ({
-          ...item,
-          isRead: true,
-          readAt: item.readAt || new Date().toISOString(),
-        }))
-      );
-
-      setUnreadCount(0);
-      setError("");
-    } catch (err) {
-      console.error("Unable to mark all notifications as read:", err);
-      setError("Could not mark notifications as read. Please try again.");
-    }
-  };
-
-  const getIcon = (type) => {
-    const value = String(type || "").toLowerCase();
-
-    if (value.includes("provider")) return <FaUser />;
-    if (value.includes("service") || value.includes("request")) {
-      return <FaTools />;
-    }
-
-    return <FaInfoCircle />;
-  };
-
-  const formatDate = (value) => {
-    if (!value) return "";
-
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "";
-
-    return date.toLocaleString("en-IN", {
-      day: "numeric",
+    return parsed.toLocaleString("en-IN", {
+      day: "2-digit",
       month: "short",
       hour: "2-digit",
       minute: "2-digit",
@@ -179,16 +186,15 @@ function NotificationBell() {
     <div className="notification-wrapper" ref={dropdownRef}>
       <button
         type="button"
-        className="admin-notification-bell"
-        onClick={toggleDropdown}
+        className={`notification-bell ${isOpen ? "bell-active" : ""}`}
+        onClick={() => setIsOpen((previous) => !previous)}
         aria-label={`Notifications, ${unreadCount} unread`}
         aria-expanded={isOpen}
-        title="Notifications"
       >
         <FaBell />
 
         {unreadCount > 0 && (
-          <span className="admin-notification-badge">
+          <span className="notification-badge">
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
@@ -196,19 +202,19 @@ function NotificationBell() {
 
       {isOpen && (
         <div className="notification-dropdown">
-          <div className="notification-dropdown-header">
+          <div className="notification-header">
             <div>
               <h3>Notifications</h3>
               <p>
                 {unreadCount > 0
-                  ? `${unreadCount} unread`
+                  ? `${unreadCount} unread notifications`
                   : "You're all caught up"}
               </p>
             </div>
 
             <button
               type="button"
-              className="notification-close-btn"
+              className="notification-close"
               onClick={() => setIsOpen(false)}
               aria-label="Close notifications"
             >
@@ -216,82 +222,96 @@ function NotificationBell() {
             </button>
           </div>
 
-          {unreadCount > 0 && (
-            <button
-              type="button"
-              className="notification-mark-all"
-              onClick={markAllAsRead}
-            >
-              <FaCheckDouble /> Mark all as read
-            </button>
-          )}
+          {notifications.length > 0 && (
+            <div className="notification-toolbar">
+              <button type="button" onClick={markAllAsRead}>
+                <FaCheck /> Mark all as read
+              </button>
 
-          {error && (
-            <div className="notification-error" role="alert">
-              {error}
-              <button type="button" onClick={fetchNotifications}>
-                Retry
+              <button
+                type="button"
+                onClick={fetchNotifications}
+                disabled={loading}
+              >
+                Refresh
               </button>
             </div>
           )}
 
-          <div className="notification-dropdown-list">
-            {loading && notifications.length === 0 ? (
-              <p className="notification-empty">Loading notifications...</p>
+          <div className="notification-list">
+            {loading ? (
+              <div className="notification-state">
+                <span className="notification-loader" />
+                <p>Loading notifications...</p>
+              </div>
+            ) : error ? (
+              <div className="notification-state">
+                <p>{error}</p>
+                <button type="button" onClick={fetchNotifications}>
+                  Try again
+                </button>
+              </div>
             ) : notifications.length === 0 ? (
-              <div className="notification-empty">
-                <FaBell />
-                <p>No notifications yet</p>
-                <span>New activity will appear here.</span>
+              <div className="notification-state">
+                <div className="notification-empty-icon">
+                  <FaBell />
+                </div>
+                <h4>No notifications yet</h4>
+                <p>New requests and customer activity will appear here.</p>
               </div>
             ) : (
-              notifications.slice(0, 8).map((item) => (
-                <div
-                  key={item._id}
-                  className={`notification-dropdown-item ${
-                    item.isRead ? "read" : "unread"
-                  }`}
-                >
-                  <div className="notification-item-icon">
-                    {getIcon(item.type)}
-                  </div>
+              notifications.map((notification) => {
+                const isRead = readIds.includes(notification.id);
 
-                  <div className="notification-item-details">
-                    <strong>{item.title || "Notification"}</strong>
-                    <p>{item.message}</p>
-                    <span>{formatDate(item.createdAt)}</span>
-
-                    {!item.isRead && (
-                      <button
-                        type="button"
-                        className="notification-read-btn"
-                        onClick={() => markAsRead(item._id)}
-                      >
-                        <FaCheck /> Mark as read
-                      </button>
-                    )}
-                  </div>
-
-                  {!item.isRead && (
+                return (
+                  <button
+                    type="button"
+                    className={`notification-item ${
+                      isRead ? "notification-read" : "notification-unread"
+                    }`}
+                    key={notification.id}
+                    onClick={() => markAsRead(notification.id)}
+                  >
                     <span
-                      className="notification-unread-dot"
-                      aria-label="Unread"
-                    />
-                  )}
-                </div>
-              ))
+                      className={`notification-type-icon notification-type-${notification.type
+                        .toLowerCase()
+                        .replace(/\s+/g, "-")}`}
+                    >
+                      {notification.type === "Complaint"
+                        ? "C"
+                        : notification.type === "Review"
+                        ? "R"
+                        : notification.type === "New User"
+                        ? "U"
+                        : "S"}
+                    </span>
+
+                    <span className="notification-item-content">
+                      <strong>{notification.title}</strong>
+                      <span className="notification-message">
+                        {notification.message}
+                      </span>
+                      <span className="notification-time">
+                        {formatTime(notification.createdAt)}
+                      </span>
+                    </span>
+
+                    {!isRead && (
+                      <span className="notification-unread-dot" />
+                    )}
+                  </button>
+                );
+              })
             )}
           </div>
 
-          {notifications.length > 8 && (
-            <div className="notification-dropdown-footer">
-              Showing the 8 most recent notifications
-            </div>
-          )}
+          <div className="notification-footer">
+            <span>Showing the latest 30 activities</span>
+          </div>
         </div>
       )}
     </div>
   );
-}
+};
 
 export default NotificationBell;

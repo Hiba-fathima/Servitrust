@@ -8,387 +8,598 @@ const API = "https://servitrust-baxkend.onrender.com/complaints";
 const STATUSES = ["Pending", "Under Review", "Resolved", "Closed"];
 
 const CATEGORIES = [
-"Service Quality",
-"Provider Behaviour",
-"Incomplete Service",
-"Payment Issue",
-"Booking Issue",
-"Other",
+  "Service Quality",
+  "Provider Behaviour",
+  "Incomplete Service",
+  "Payment Issue",
+  "Booking Issue",
+  "Other",
 ];
 
 function Complaints() {
-const [complaints, setComplaints] = useState([]);
-const [loading, setLoading] = useState(true);
-const [search, setSearch] = useState("");
-const [statusFilter, setStatusFilter] = useState("All");
-const [categoryFilter, setCategoryFilter] = useState("All");
-const [selected, setSelected] = useState(null);
-const [saving, setSaving] = useState(false);
+  const [complaints, setComplaints] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [categoryFilter, setCategoryFilter] = useState("All");
+  const [selected, setSelected] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [sendingId, setSendingId] = useState("");
 
-const [status, setStatus] = useState("Pending");
-const [adminNotes, setAdminNotes] = useState("");
-const [resolution, setResolution] = useState("");
+  const [status, setStatus] = useState("Pending");
+  const [adminNotes, setAdminNotes] = useState("");
+  const [resolution, setResolution] = useState("");
 
-const fetchComplaints = async () => {
-try {
-setLoading(true);
+  const fetchComplaints = async () => {
+    try {
+      setLoading(true);
 
-  const response = await axios.get(API);
+      const response = await axios.get(API);
 
-  setComplaints(
-    Array.isArray(response.data) ? response.data : []
-  );
-} catch (error) {
-  console.error(error);
+      setComplaints(
+        Array.isArray(response.data) ? response.data : []
+      );
+    } catch (error) {
+      console.error("FETCH COMPLAINTS ERROR:", error);
 
-  Swal.fire(
-    "Error",
-    "Unable to load complaints. Check your backend connection.",
-    "error"
-  );
-} finally {
-  setLoading(false);
-}
+      Swal.fire(
+        "Error",
+        error.response?.data?.message ||
+          "Unable to load complaints.",
+        "error"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
-};
+  useEffect(() => {
+    fetchComplaints();
+  }, []);
 
-useEffect(() => {
-fetchComplaints();
-}, []);
+  const filtered = complaints.filter((item) => {
+    const keyword = search.toLowerCase().trim();
 
-const filtered = complaints.filter((item) => {
-const keyword = search.toLowerCase().trim();
+    const matchesSearch =
+      !keyword ||
+      [
+        item.complaintId,
+        item.subject,
+        item.description,
+        item.category,
+        item.customer?.name,
+        item.customer?.email,
+        item.provider?.name,
+        item.provider?.userId?.name,
+      ].some((value) =>
+        String(value || "").toLowerCase().includes(keyword)
+      );
 
-const matchesSearch =
-  !keyword ||
-  [
-    item.complaintId,
-    item.subject,
-    item.description,
-    item.category,
-    item.customer?.name,
-    item.customer?.email,
-    item.provider?.name,
-  ].some((value) =>
-    String(value || "").toLowerCase().includes(keyword)
-  );
-
-return (
-  matchesSearch &&
-  (statusFilter === "All" || item.status === statusFilter) &&
-  (categoryFilter === "All" || item.category === categoryFilter)
-);
-
-});
-
-const openComplaint = (item) => {
-setSelected(item);
-setStatus(item.status || "Pending");
-setAdminNotes(item.adminNotes || "");
-setResolution(item.resolution || "");
-};
-
-const updateComplaint = async (event) => {
-event.preventDefault();
-
-if (!selected?._id) return;
-
-try {
-  setSaving(true);
-
-  const response = await axios.put(`${API}/${selected._id}`, {
-    status,
-    adminNotes,
-    resolution,
+    return (
+      matchesSearch &&
+      (statusFilter === "All" || item.status === statusFilter) &&
+      (categoryFilter === "All" || item.category === categoryFilter)
+    );
   });
 
-  const updated = response.data.complaint;
+  const openComplaint = (item) => {
+    setSelected(item);
+    setStatus(item.status || "Pending");
+    setAdminNotes(item.adminNotes || "");
+    setResolution(item.resolution || "");
+  };
 
-  setComplaints((previous) =>
-    previous.map((item) =>
-      item._id === updated._id ? updated : item
-    )
-  );
+  // Only this admin action makes a complaint visible to the provider.
+  const sendToProvider = async (item) => {
+    const providerName =
+      item.provider?.userId?.name ||
+      item.provider?.name ||
+      "the assigned provider";
 
-  setSelected(null);
+    if (!item.provider?._id) {
+      Swal.fire(
+        "Provider Missing",
+        "This complaint is not linked to a provider.",
+        "warning"
+      );
+      return;
+    }
 
-  Swal.fire(
-    "Updated",
-    "Complaint updated successfully.",
-    "success"
-  );
-} catch (error) {
-  Swal.fire(
-    "Error",
-    error.response?.data?.message || "Unable to update complaint.",
-    "error"
-  );
-} finally {
-  setSaving(false);
-}
+    if (item.assignedToProvider) {
+      Swal.fire(
+        "Already Sent",
+        "This complaint has already been sent to the provider.",
+        "info"
+      );
+      return;
+    }
 
-};
+    const result = await Swal.fire({
+      title: "Send complaint to provider?",
+      html: `
+        <p>Only the selected provider will be able to see this complaint.</p>
+        <strong>${providerName}</strong>
+      `,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Send to Provider",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#176b63",
+    });
 
-const deleteComplaint = async (item) => {
-const result = await Swal.fire({
-title: "Delete complaint?",
-text: "This permanently deletes the complaint.",
-icon: "warning",
-showCancelButton: true,
-confirmButtonText: "Delete",
-confirmButtonColor: "#b42318",
-});
+    if (!result.isConfirmed) return;
 
-if (!result.isConfirmed) return;
+    try {
+      setSendingId(item._id);
 
-try {
-  await axios.delete(`${API}/${item._id}`);
+      const response = await axios.put(
+        `${API}/${item._id}/send-to-provider`
+      );
 
-  setComplaints((previous) =>
-    previous.filter((complaint) => complaint._id !== item._id)
-  );
+      const updated = response.data.complaint;
 
-  Swal.fire("Deleted", "Complaint deleted.", "success");
-} catch (error) {
-  Swal.fire(
-    "Error",
-    error.response?.data?.message || "Unable to delete complaint.",
-    "error"
-  );
-}
+      setComplaints((previous) =>
+        previous.map((complaint) =>
+          complaint._id === updated._id ? updated : complaint
+        )
+      );
 
-};
+      setSelected((previous) =>
+        previous?._id === updated._id ? updated : previous
+      );
 
-const count = (value) =>
-complaints.filter((item) => item.status === value).length;
+      Swal.fire(
+        "Complaint Sent",
+        `The complaint was sent to ${providerName}.`,
+        "success"
+      );
+    } catch (error) {
+      console.error("SEND COMPLAINT ERROR:", error);
 
-const formatDate = (value) => {
-if (!value) return "—";
+      Swal.fire(
+        "Error",
+        error.response?.data?.message ||
+          "Unable to send complaint to provider.",
+        "error"
+      );
+    } finally {
+      setSendingId("");
+    }
+  };
 
-const date = new Date(value);
+  const updateComplaint = async (event) => {
+    event.preventDefault();
 
-return Number.isNaN(date.getTime())
-  ? "—"
-  : date.toLocaleDateString("en-IN");
+    if (!selected?._id) return;
 
-};
+    try {
+      setSaving(true);
 
-return ( <div className="admin-complaints"> <header className="ac-header"> <div> <p className="ac-eyebrow">CUSTOMER SUPPORT</p> <h1>Complaints</h1> <p>Review complaints and manage customer resolutions.</p> </div>
+      const response = await axios.put(`${API}/${selected._id}`, {
+        status,
+        adminNotes,
+        resolution,
+      });
 
-    <button onClick={fetchComplaints} disabled={loading}>
-      {loading ? "Loading..." : "↻ Refresh"}
-    </button>
-  </header>
+      const updated = response.data.complaint;
 
-  <section className="ac-summary">
-    <div>
-      <span>Total Complaints</span>
-      <strong>{complaints.length}</strong>
-    </div>
-    <div>
-      <span>Pending</span>
-      <strong>{count("Pending")}</strong>
-    </div>
-    <div>
-      <span>Under Review</span>
-      <strong>{count("Under Review")}</strong>
-    </div>
-    <div>
-      <span>Resolved</span>
-      <strong>{count("Resolved")}</strong>
-    </div>
-  </section>
+      setComplaints((previous) =>
+        previous.map((item) =>
+          item._id === updated._id ? updated : item
+        )
+      );
 
-  <section className="ac-filters">
-    <input
-      type="search"
-      placeholder="Search complaint, customer, provider..."
-      value={search}
-      onChange={(event) => setSearch(event.target.value)}
-    />
+      setSelected(null);
 
-    <select
-      value={statusFilter}
-      onChange={(event) => setStatusFilter(event.target.value)}
-    >
-      <option value="All">All Statuses</option>
-      {STATUSES.map((value) => (
-        <option key={value}>{value}</option>
-      ))}
-    </select>
+      Swal.fire(
+        "Updated",
+        "Complaint updated successfully.",
+        "success"
+      );
+    } catch (error) {
+      Swal.fire(
+        "Error",
+        error.response?.data?.message ||
+          "Unable to update complaint.",
+        "error"
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
 
-    <select
-      value={categoryFilter}
-      onChange={(event) => setCategoryFilter(event.target.value)}
-    >
-      <option value="All">All Categories</option>
-      {CATEGORIES.map((value) => (
-        <option key={value}>{value}</option>
-      ))}
-    </select>
-  </section>
+  const deleteComplaint = async (item) => {
+    const result = await Swal.fire({
+      title: "Delete complaint?",
+      text: "This permanently deletes the complaint.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Delete",
+      confirmButtonColor: "#b42318",
+    });
 
-  <section className="ac-table-card">
-    <div className="ac-table-title">
-      <h2>All Complaints</h2>
-      <span>{filtered.length} records</span>
-    </div>
+    if (!result.isConfirmed) return;
 
-    <div className="ac-table-scroll">
-      <table>
-        <thead>
-          <tr>
-            <th>Complaint ID</th>
-            <th>Customer</th>
-            <th>Provider</th>
-            <th>Category</th>
-            <th>Date</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
+    try {
+      await axios.delete(`${API}/${item._id}`);
 
-        <tbody>
-          {loading ? (
-            <tr>
-              <td colSpan="7" className="ac-empty">
-                Loading complaints...
-              </td>
-            </tr>
-          ) : filtered.length === 0 ? (
-            <tr>
-              <td colSpan="7" className="ac-empty">
-                No complaints found.
-              </td>
-            </tr>
-          ) : (
-            filtered.map((item) => (
-              <tr key={item._id}>
-                <td className="ac-id">
-                  {item.complaintId || "—"}
-                </td>
+      setComplaints((previous) =>
+        previous.filter((complaint) => complaint._id !== item._id)
+      );
 
-                <td>
-                  <strong>{item.customer?.name || "Unknown"}</strong>
-                  <small>{item.customer?.email || ""}</small>
-                </td>
+      if (selected?._id === item._id) {
+        setSelected(null);
+      }
 
-                <td>{item.provider?.name || "—"}</td>
-                <td>{item.category}</td>
-                <td>{formatDate(item.createdAt)}</td>
+      Swal.fire("Deleted", "Complaint deleted.", "success");
+    } catch (error) {
+      Swal.fire(
+        "Error",
+        error.response?.data?.message ||
+          "Unable to delete complaint.",
+        "error"
+      );
+    }
+  };
 
-                <td>
-                  <span
-                    className={`ac-status ac-${(
-                      item.status || "Pending"
-                    ).toLowerCase().replace(/\s+/g, "-")}`}
-                  >
-                    {item.status || "Pending"}
-                  </span>
-                </td>
+  const count = (value) =>
+    complaints.filter((item) => item.status === value).length;
 
-                <td>
-                  <div className="ac-actions">
-                    <button onClick={() => openComplaint(item)}>
-                      View / Edit
-                    </button>
+  const formatDate = (value) => {
+    if (!value) return "—";
 
-                    <button
-                      className="ac-delete"
-                      onClick={() => deleteComplaint(item)}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </td>
+    const date = new Date(value);
+
+    return Number.isNaN(date.getTime())
+      ? "—"
+      : date.toLocaleDateString("en-IN");
+  };
+
+  const getProviderName = (item) =>
+    item.provider?.userId?.name ||
+    item.provider?.name ||
+    "—";
+
+  return (
+    <div className="admin-complaints">
+      <header className="ac-header">
+        <div>
+          <p className="ac-eyebrow">CUSTOMER SUPPORT</p>
+          <h1>Complaints</h1>
+          <p>
+            Review customer complaints and send selected issues to providers.
+          </p>
+        </div>
+
+        <button onClick={fetchComplaints} disabled={loading}>
+          {loading ? "Loading..." : "↻ Refresh"}
+        </button>
+      </header>
+
+      <section className="ac-summary">
+        <div>
+          <span>Total Complaints</span>
+          <strong>{complaints.length}</strong>
+        </div>
+
+        <div>
+          <span>Pending</span>
+          <strong>{count("Pending")}</strong>
+        </div>
+
+        <div>
+          <span>Under Review</span>
+          <strong>{count("Under Review")}</strong>
+        </div>
+
+        <div>
+          <span>Resolved</span>
+          <strong>{count("Resolved")}</strong>
+        </div>
+      </section>
+
+      <section className="ac-filters">
+        <input
+          type="search"
+          placeholder="Search complaint, customer, provider..."
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+        />
+
+        <select
+          value={statusFilter}
+          onChange={(event) => setStatusFilter(event.target.value)}
+        >
+          <option value="All">All Statuses</option>
+
+          {STATUSES.map((value) => (
+            <option key={value} value={value}>
+              {value}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={categoryFilter}
+          onChange={(event) => setCategoryFilter(event.target.value)}
+        >
+          <option value="All">All Categories</option>
+
+          {CATEGORIES.map((value) => (
+            <option key={value} value={value}>
+              {value}
+            </option>
+          ))}
+        </select>
+      </section>
+
+      <section className="ac-table-card">
+        <div className="ac-table-title">
+          <h2>All Complaints</h2>
+          <span>{filtered.length} records</span>
+        </div>
+
+        <div className="ac-table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Complaint ID</th>
+                <th>Customer</th>
+                <th>Provider</th>
+                <th>Category</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Provider Assignment</th>
+                <th>Actions</th>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
-  </section>
+            </thead>
 
-  {selected && (
-    <div className="ac-overlay">
-      <div className="ac-modal">
-        <div className="ac-modal-header">
-          <div>
-            <p className="ac-eyebrow">
-              {selected.complaintId || "COMPLAINT"}
-            </p>
-            <h2>Complaint Details</h2>
-          </div>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan="8" className="ac-empty">
+                    Loading complaints...
+                  </td>
+                </tr>
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan="8" className="ac-empty">
+                    No complaints found.
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((item) => (
+                  <tr key={item._id}>
+                    <td className="ac-id">
+                      {item.complaintId || "—"}
+                    </td>
 
-          <button
-            type="button"
-            className="ac-close"
-            onClick={() => setSelected(null)}
-          >
-            ×
-          </button>
+                    <td>
+                      <strong>
+                        {item.customer?.name || "Unknown"}
+                      </strong>
+                      <small>{item.customer?.email || ""}</small>
+                    </td>
+
+                    <td>
+                      <strong>{getProviderName(item)}</strong>
+                      <small>
+                        {item.provider?.userId?.email ||
+                          item.provider?.email ||
+                          ""}
+                      </small>
+                    </td>
+
+                    <td>{item.category || "—"}</td>
+
+                    <td>{formatDate(item.createdAt)}</td>
+
+                    <td>
+                      <span
+                        className={`ac-status ac-${(
+                          item.status || "Pending"
+                        )
+                          .toLowerCase()
+                          .replace(/\s+/g, "-")}`}
+                      >
+                        {item.status || "Pending"}
+                      </span>
+                    </td>
+
+                    <td>
+                      {item.assignedToProvider ? (
+                        <span className="ac-assignment-sent">
+                          ✓ Sent to Provider
+                        </span>
+                      ) : (
+                        <span className="ac-assignment-pending">
+                          Not Sent
+                        </span>
+                      )}
+                    </td>
+
+                    <td>
+                      <div className="ac-actions">
+                        <button onClick={() => openComplaint(item)}>
+                          View / Edit
+                        </button>
+
+                        <button
+                          type="button"
+                          className="ac-send-provider"
+                          disabled={
+                            Boolean(item.assignedToProvider) ||
+                            !item.provider?._id ||
+                            sendingId === item._id
+                          }
+                          onClick={() => sendToProvider(item)}
+                          title={
+                            !item.provider?._id
+                              ? "No provider is associated with this complaint"
+                              : ""
+                          }
+                        >
+                          {sendingId === item._id
+                            ? "Sending..."
+                            : item.assignedToProvider
+                            ? "Sent"
+                            : "Send to Provider"}
+                        </button>
+
+                        <button
+                          className="ac-delete"
+                          onClick={() => deleteComplaint(item)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
+      </section>
 
-        <div className="ac-details">
-          <p><strong>Customer:</strong> {selected.customer?.name || "Unknown"}</p>
-          <p><strong>Email:</strong> {selected.customer?.email || "—"}</p>
-          <p><strong>Provider:</strong> {selected.provider?.name || "—"}</p>
-          <p><strong>Category:</strong> {selected.category}</p>
-          <p><strong>Subject:</strong> {selected.subject}</p>
-          <p><strong>Description:</strong> {selected.description}</p>
-          <p><strong>Date:</strong> {formatDate(selected.createdAt)}</p>
-        </div>
+      {selected && (
+        <div className="ac-overlay">
+          <div className="ac-modal">
+            <div className="ac-modal-header">
+              <div>
+                <p className="ac-eyebrow">
+                  {selected.complaintId || "COMPLAINT"}
+                </p>
+                <h2>Complaint Details</h2>
+              </div>
 
-        <form onSubmit={updateComplaint} className="ac-form">
-          <label htmlFor="ac-status">Status</label>
-          <select
-            id="ac-status"
-            value={status}
-            onChange={(event) => setStatus(event.target.value)}
-          >
-            {STATUSES.map((value) => (
-              <option key={value}>{value}</option>
-            ))}
-          </select>
+              <button
+                type="button"
+                className="ac-close"
+                onClick={() => setSelected(null)}
+              >
+                ×
+              </button>
+            </div>
 
-          <label htmlFor="ac-notes">Admin Notes</label>
-          <textarea
-            id="ac-notes"
-            rows="3"
-            value={adminNotes}
-            onChange={(event) => setAdminNotes(event.target.value)}
-            placeholder="Internal investigation notes..."
-          />
+            <div className="ac-details">
+              <p>
+                <strong>Customer:</strong>{" "}
+                {selected.customer?.name || "Unknown"}
+              </p>
 
-          <label htmlFor="ac-resolution">Resolution</label>
-          <textarea
-            id="ac-resolution"
-            rows="3"
-            value={resolution}
-            onChange={(event) => setResolution(event.target.value)}
-            placeholder="Describe the resolution..."
-          />
+              <p>
+                <strong>Email:</strong>{" "}
+                {selected.customer?.email || "—"}
+              </p>
 
-          <div className="ac-modal-actions">
-            <button
-              type="button"
-              onClick={() => setSelected(null)}
-              disabled={saving}
-            >
-              Cancel
-            </button>
+              <p>
+                <strong>Provider:</strong> {getProviderName(selected)}
+              </p>
 
-            <button type="submit" disabled={saving}>
-              {saving ? "Saving..." : "Save Changes"}
-            </button>
+              <p>
+                <strong>Category:</strong> {selected.category || "—"}
+              </p>
+
+              <p>
+                <strong>Subject:</strong> {selected.subject || "—"}
+              </p>
+
+              <p>
+                <strong>Description:</strong>{" "}
+                {selected.description || "—"}
+              </p>
+
+              <p>
+                <strong>Date:</strong> {formatDate(selected.createdAt)}
+              </p>
+
+              <p>
+                <strong>Sent to provider:</strong>{" "}
+                {selected.assignedToProvider ? "Yes" : "No"}
+              </p>
+
+              {selected.sentToProviderAt && (
+                <p>
+                  <strong>Sent date:</strong>{" "}
+                  {formatDate(selected.sentToProviderAt)}
+                </p>
+              )}
+
+              <p>
+                <strong>Provider response:</strong>{" "}
+                {selected.providerResponse || "No response yet"}
+              </p>
+            </div>
+
+            {!selected.assignedToProvider &&
+              selected.provider?._id && (
+                <button
+                  type="button"
+                  className="ac-send-provider ac-modal-send"
+                  disabled={sendingId === selected._id}
+                  onClick={() => sendToProvider(selected)}
+                >
+                  {sendingId === selected._id
+                    ? "Sending..."
+                    : "Send This Complaint to Provider"}
+                </button>
+              )}
+
+            <form onSubmit={updateComplaint} className="ac-form">
+              <label htmlFor="ac-status">Status</label>
+
+              <select
+                id="ac-status"
+                value={status}
+                onChange={(event) => setStatus(event.target.value)}
+              >
+                {STATUSES.map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
+
+              <label htmlFor="ac-notes">Admin Notes</label>
+
+              <textarea
+                id="ac-notes"
+                rows="3"
+                value={adminNotes}
+                onChange={(event) => setAdminNotes(event.target.value)}
+                placeholder="Internal investigation notes..."
+              />
+
+              <label htmlFor="ac-resolution">Resolution</label>
+
+              <textarea
+                id="ac-resolution"
+                rows="3"
+                value={resolution}
+                onChange={(event) => setResolution(event.target.value)}
+                placeholder="Describe the resolution..."
+              />
+
+              <div className="ac-modal-actions">
+                <button
+                  type="button"
+                  onClick={() => setSelected(null)}
+                  disabled={saving}
+                >
+                  Cancel
+                </button>
+
+                <button type="submit" disabled={saving}>
+                  {saving ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
           </div>
-        </form>
-      </div>
+        </div>
+      )}
     </div>
-  )}
-</div>
-
-);
+  );
 }
 
 export default Complaints;

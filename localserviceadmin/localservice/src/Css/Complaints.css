@@ -372,3 +372,54 @@ padding: 15px;
 font-size: 24px;
 }
 }
+
+
+
+
+
+.ac-send-provider {
+  padding: 8px 11px;
+  border: 1px solid #176b63;
+  border-radius: 8px;
+  background: #176b63;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ac-send-provider:hover:not(:disabled) {
+  background: #12564f;
+}
+
+.ac-send-provider:disabled {
+  border-color: #c8dcd8;
+  background: #eaf4f2;
+  color: #547c75;
+  cursor: not-allowed;
+}
+
+.ac-assignment-sent,
+.ac-assignment-pending {
+  display: inline-block;
+  padding: 6px 9px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.ac-assignment-sent {
+  background: #e2f7eb;
+  color: #16814b;
+}
+
+.ac-assignment-pending {
+  background: #fff4dc;
+  color: #98620c;
+}
+
+.ac-modal-send {
+  margin: 0 0 18px;
+}
