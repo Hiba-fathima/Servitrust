@@ -1,0 +1,406 @@
+/* Customer notification bell and dropdown */
+
+.customer-notification-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  z-index: 1000;
+}
+
+.customer-notification-bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border: 1px solid #dce8e6;
+  border-radius: 14px;
+  background: #fff;
+  color: #176b63;
+  font-size: 19px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.customer-notification-bell:hover,
+.customer-notification-bell.is-open {
+  background: #eaf7f4;
+  border-color: #a9d8d0;
+}
+
+.customer-notification-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 21px;
+  height: 21px;
+  padding: 0 5px;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: #d94848;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.customer-notification-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: min(390px, calc(100vw - 28px));
+  overflow: hidden;
+  border: 1px solid #e1ebe9;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 18px 55px rgba(20, 58, 54, 0.18);
+  color: #203b39;
+  text-align: left;
+  animation: customer-notification-appear 0.16s ease-out;
+}
+
+@keyframes customer-notification-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.customer-notification-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid #edf2f1;
+}
+
+.customer-notification-header h2 {
+  margin: 0;
+  color: #173f3b;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.customer-notification-header p {
+  margin: 5px 0 0;
+  color: #7a8d8a;
+  font-size: 12px;
+}
+
+.customer-notification-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border: 0;
+  border-radius: 9px;
+  background: #f2f7f6;
+  color: #5b7773;
+  cursor: pointer;
+}
+
+.customer-notification-close:hover {
+  background: #e5f1ef;
+  color: #176b63;
+}
+
+.customer-notification-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #fbfdfd;
+  border-bottom: 1px solid #edf2f1;
+}
+
+.customer-notification-toolbar button,
+.customer-notification-footer button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #16766b;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.customer-notification-toolbar button:hover,
+.customer-notification-footer button:hover {
+  background: #eaf7f4;
+}
+
+.customer-notification-toolbar button:disabled,
+.customer-notification-footer button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.customer-notification-list {
+  max-height: 390px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.customer-notification-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 15px 16px;
+  border-bottom: 1px solid #f0f4f3;
+  transition: background 0.15s;
+}
+
+.customer-notification-item:last-child {
+  border-bottom: 0;
+}
+
+.customer-notification-item.is-unread {
+  background: #f3fbf9;
+}
+
+.customer-notification-item:hover {
+  background: #f7fbfa;
+}
+
+.customer-notification-type-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 11px;
+  font-size: 13px;
+}
+
+.customer-notification-icon-success {
+  background: #e3f7eb;
+  color: #16814b;
+}
+
+.customer-notification-icon-danger {
+  background: #fff0ef;
+  color: #c84444;
+}
+
+.customer-notification-icon-info {
+  background: #e8f3ff;
+  color: #3475b8;
+}
+
+.customer-notification-icon-default {
+  background: #e8f7f4;
+  color: #176b63;
+}
+
+.customer-notification-content {
+  min-width: 0;
+  flex: 1;
+}
+
+.customer-notification-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.customer-notification-title-row h3 {
+  margin: 0;
+  color: #234541;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.customer-notification-content > p {
+  margin: 5px 0 8px;
+  color: #647a76;
+  font-size: 12px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.customer-notification-unread-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: #1b9b87;
+}
+
+.customer-notification-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.customer-notification-footer time {
+  color: #8a9b98;
+  font-size: 10px;
+}
+
+.customer-notification-footer button {
+  min-height: 25px;
+  padding: 4px 6px;
+  font-size: 10px;
+}
+
+.customer-notification-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+  padding: 25px 20px;
+  color: #7c918d;
+  text-align: center;
+  font-size: 12px;
+}
+
+.customer-notification-empty-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 43px;
+  height: 43px;
+  margin-bottom: 11px;
+  border-radius: 14px;
+  background: #eaf7f4;
+  color: #176b63;
+  font-size: 18px;
+}
+
+.customer-notification-empty strong {
+  color: #355a55;
+  font-size: 13px;
+}
+
+.customer-notification-empty p {
+  max-width: 235px;
+  margin: 6px 0 0;
+  line-height: 1.5;
+}
+
+.customer-notification-bottom {
+  padding: 10px 14px;
+  border-top: 1px solid #edf2f1;
+  background: #fbfdfd;
+  color: #8a9b98;
+  font-size: 10px;
+  text-align: center;
+}
+
+.customer-notification-bell:focus-visible,
+.customer-notification-close:focus-visible,
+.customer-notification-toolbar button:focus-visible,
+.customer-notification-footer button:focus-visible {
+  outline: 3px solid #8bd4c8;
+  outline-offset: 3px;
+}
+
+@media (max-width: 480px) {
+  .customer-notification-dropdown {
+    right: -8px;
+    width: min(370px, calc(100vw - 24px));
+  }
+
+  .customer-notification-header {
+    padding: 15px 14px 12px;
+  }
+
+  .customer-notification-item {
+    padding: 13px 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .customer-notification-dropdown {
+    animation: none;
+  }
+}
+
+
+
+
+/* Notification Try Again button */
+
+.customer-notification-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px 18px;
+  color: #647a76;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.customer-notification-error button,
+.customer-notification-error .try-again-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 10px 20px;
+  border: 1px solid #176b63;
+  border-radius: 10px;
+  background: #176b63;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.customer-notification-error button:hover,
+.customer-notification-error .try-again-button:hover {
+  background: #12564f;
+  border-color: #12564f;
+  transform: translateY(-1px);
+}
+
+.customer-notification-error button:active,
+.customer-notification-error .try-again-button:active {
+  transform: translateY(0);
+}
+
+.customer-notification-error button:focus-visible,
+.customer-notification-error .try-again-button:focus-visible {
+  outline: 3px solid #a9d8d0;
+  outline-offset: 3px;
+}
+
+.customer-notification-error button:disabled,
+.customer-notification-error .try-again-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+

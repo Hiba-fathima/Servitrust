@@ -355,6 +355,13 @@ const handleLogout = () => {
             Dashboard
 
           </Link>
+          <Link
+  to="/customer/requests"
+  onClick={() => setShowSidebar(false)}
+>
+  <span>▤</span>
+  My Requests
+</Link>
 
 
           <Link

@@ -21,6 +21,9 @@ import ProviderSidebar from './pages/ProviderSidebar'
 import ProviderRequests from './pages/ProviderRequest'
 import ProviderServices from './pages/ProvideServices'
 import MyComplaints from './pages/MyComplaints'
+import CustomerRequests from './pages/CustomerRequest'
+import ProviderComplaints from './pages/ProviderComplaint'
+import ProviderReviews from './pages/PRoviderReviews'
 
 function App() {
   return (
@@ -96,7 +99,10 @@ function App() {
   path="/customer/dashboard"
   element={<CustomerDashboard />}
 />
-
+<Route
+  path="/customer/requests"
+  element={<CustomerRequests />}
+/>
  <Route
   path="/customer/complaints"
   element={<MyComplaints />}
@@ -109,6 +115,25 @@ function App() {
     <div className="provider-layout">
       <ProviderSidebar />
       <ProviderRequests />
+    </div>
+  }
+/>
+
+<Route
+  path="/provider/complaints"
+  element={
+    <div className="provider-layout">
+      <ProviderSidebar />
+      <ProviderComplaints />
+    </div>
+  }
+/>
+<Route
+  path="/provider/reviews"
+  element={
+    <div className="provider-layout">
+      <ProviderSidebar />
+      <ProviderReviews />
     </div>
   }
 />

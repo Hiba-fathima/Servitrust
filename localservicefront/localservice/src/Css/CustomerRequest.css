@@ -1,0 +1,797 @@
+/* ==========================================
+SERVITRUST - CUSTOMER MY REQUESTS
+Reuses CustomerDashboard.css
+========================================== */
+
+.customer-my-requests {
+width: 100%;
+min-width: 0;
+box-sizing: border-box;
+}
+
+.customer-my-requests *,
+.customer-my-requests *::before,
+.customer-my-requests *::after {
+box-sizing: border-box;
+}
+
+/* ==========================================
+HEADER CONTROLS
+========================================== */
+
+.customer-my-requests .my-requests-controls {
+display: flex;
+align-items: center;
+justify-content: flex-end;
+gap: 12px;
+flex-wrap: wrap;
+min-width: 0;
+}
+
+/* Status filter */
+
+.customer-my-requests .my-requests-filter {
+min-width: 155px;
+max-width: 100%;
+min-height: 42px;
+padding: 10px 14px;
+border: 1px solid #d9e4e7;
+border-radius: 10px;
+background: #ffffff;
+color: #263b40;
+font-family: inherit;
+font-size: 14px;
+outline: none;
+cursor: pointer;
+transition:
+border-color 0.2s ease,
+box-shadow 0.2s ease;
+}
+
+.customer-my-requests .my-requests-filter:hover {
+border-color: #a8c8cc;
+}
+
+.customer-my-requests .my-requests-filter:focus {
+border-color: #0f8b8d;
+box-shadow: 0 0 0 3px rgba(15, 139, 141, 0.12);
+}
+
+/* Refresh button */
+
+.customer-my-requests .refresh-requests-button {
+white-space: nowrap;
+}
+
+.customer-my-requests .refresh-requests-button:disabled {
+opacity: 0.6;
+cursor: not-allowed;
+}
+
+/* ==========================================
+REQUEST CARDS
+========================================== */
+
+.customer-my-requests .customer-request-card {
+width: 100%;
+min-width: 0;
+box-sizing: border-box;
+}
+
+.customer-my-requests .request-main-info {
+min-width: 0;
+flex: 1;
+}
+
+.customer-my-requests .request-main-info h3 {
+overflow-wrap: anywhere;
+}
+
+.customer-my-requests .request-id {
+overflow-wrap: anywhere;
+word-break: break-word;
+}
+
+.customer-my-requests .request-detail {
+min-width: 0;
+}
+
+.customer-my-requests .request-detail strong {
+overflow-wrap: anywhere;
+word-break: break-word;
+}
+
+.customer-my-requests .request-description p {
+overflow-wrap: anywhere;
+word-break: break-word;
+}
+
+/* ==========================================
+REQUEST ACTIONS
+========================================== */
+
+.customer-my-requests .request-action-buttons {
+display: flex;
+align-items: center;
+justify-content: flex-end;
+gap: 10px;
+flex-wrap: wrap;
+min-width: 0;
+}
+
+.customer-my-requests .request-action-buttons button {
+font-family: inherit;
+}
+
+.customer-my-requests .request-action-buttons button:disabled {
+opacity: 0.6;
+cursor: not-allowed;
+}
+
+/* Review button */
+
+.customer-my-requests .review-request-button {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+gap: 8px;
+min-height: 40px;
+padding: 10px 15px;
+border: 1px solid #e6c76a;
+border-radius: 9px;
+background: #fff8e5;
+color: #88620b;
+font-family: inherit;
+font-size: 13px;
+font-weight: 600;
+cursor: pointer;
+transition:
+background 0.2s ease,
+border-color 0.2s ease,
+transform 0.2s ease;
+}
+
+.customer-my-requests .review-request-button:hover {
+background: #ffefc2;
+border-color: #d7a72b;
+}
+
+.customer-my-requests .review-request-button:focus-visible {
+outline: 3px solid rgba(215, 167, 43, 0.3);
+outline-offset: 2px;
+}
+
+/* ==========================================
+COMPLAINT MODAL
+Uses dashboard modal class names
+========================================== */
+
+.customer-my-requests .complaint-modal-overlay {
+position: fixed;
+inset: 0;
+z-index: 9999;
+display: flex;
+align-items: center;
+justify-content: center;
+padding: 20px;
+overflow-y: auto;
+background: rgba(14, 31, 35, 0.62);
+backdrop-filter: blur(4px);
+}
+
+.customer-my-requests .complaint-modal {
+width: 100%;
+max-width: 570px;
+max-height: calc(100vh - 40px);
+overflow-y: auto;
+padding: 28px;
+border: 1px solid #e1eaec;
+border-radius: 18px;
+background: #ffffff;
+color: #263b40;
+box-shadow: 0 20px 60px rgba(14, 42, 47, 0.22);
+animation: customerComplaintModalIn 0.2s ease-out;
+}
+
+@keyframes customerComplaintModalIn {
+from {
+opacity: 0;
+transform: translateY(10px) scale(0.99);
+}
+
+to {
+opacity: 1;
+transform: translateY(0) scale(1);
+}
+}
+
+/* Modal header */
+
+.customer-my-requests .complaint-modal-header {
+display: flex;
+align-items: flex-start;
+justify-content: space-between;
+gap: 18px;
+margin-bottom: 24px;
+padding-bottom: 20px;
+border-bottom: 1px solid #e8eff0;
+}
+
+.customer-my-requests .complaint-modal-header > div {
+min-width: 0;
+flex: 1;
+}
+
+.customer-my-requests .complaint-modal-header h2 {
+margin: 8px 0 12px;
+color: #173d43;
+font-size: 24px;
+line-height: 1.3;
+font-weight: 700;
+}
+
+.customer-my-requests .complaint-modal-header p {
+margin: 5px 0;
+color: #62777b;
+font-size: 14px;
+line-height: 1.6;
+overflow-wrap: anywhere;
+}
+
+.customer-my-requests .complaint-modal-header p strong {
+color: #26494e;
+}
+
+.customer-my-requests .complaint-request-id {
+font-size: 12px !important;
+overflow-wrap: anywhere;
+word-break: break-word;
+}
+
+/* Close button */
+
+.customer-my-requests .complaint-modal-close {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+flex-shrink: 0;
+width: 38px;
+height: 38px;
+border: 1px solid #e0e9ea;
+border-radius: 10px;
+background: #f6f9f9;
+color: #456267;
+font-size: 15px;
+cursor: pointer;
+transition:
+background 0.2s ease,
+color 0.2s ease;
+}
+
+.customer-my-requests .complaint-modal-close:hover {
+background: #eaf3f3;
+color: #0f777a;
+}
+
+.customer-my-requests .complaint-modal-close:disabled {
+opacity: 0.6;
+cursor: not-allowed;
+}
+
+/* Modal form */
+
+.customer-my-requests .complaint-modal form {
+display: flex;
+flex-direction: column;
+gap: 10px;
+}
+
+.customer-my-requests .complaint-modal form label {
+margin-top: 8px;
+color: #28484d;
+font-size: 13px;
+font-weight: 600;
+}
+
+.customer-my-requests .complaint-modal form input,
+.customer-my-requests .complaint-modal form select,
+.customer-my-requests .complaint-modal form textarea {
+width: 100%;
+min-width: 0;
+padding: 12px 14px;
+border: 1px solid #d9e4e7;
+border-radius: 9px;
+background: #ffffff;
+color: #263b40;
+font-family: inherit;
+font-size: 14px;
+line-height: 1.5;
+outline: none;
+transition:
+border-color 0.2s ease,
+box-shadow 0.2s ease;
+}
+
+.customer-my-requests .complaint-modal form input,
+.customer-my-requests .complaint-modal form select {
+min-height: 44px;
+}
+
+.customer-my-requests .complaint-modal form textarea {
+min-height: 120px;
+resize: vertical;
+}
+
+.customer-my-requests .complaint-modal form input::placeholder,
+.customer-my-requests .complaint-modal form textarea::placeholder {
+color: #91a3a6;
+}
+
+.customer-my-requests .complaint-modal form input:focus,
+.customer-my-requests .complaint-modal form select:focus,
+.customer-my-requests .complaint-modal form textarea:focus {
+border-color: #0f8b8d;
+box-shadow: 0 0 0 3px rgba(15, 139, 141, 0.12);
+}
+
+/* Modal action buttons */
+
+.customer-my-requests .complaint-modal-actions {
+display: flex;
+justify-content: flex-end;
+gap: 12px;
+flex-wrap: wrap;
+margin-top: 16px;
+}
+
+.customer-my-requests .complaint-modal-actions button {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+min-height: 43px;
+padding: 11px 18px;
+border-radius: 9px;
+font-family: inherit;
+font-size: 14px;
+font-weight: 600;
+cursor: pointer;
+transition:
+background 0.2s ease,
+border-color 0.2s ease,
+opacity 0.2s ease;
+}
+
+.customer-my-requests .complaint-cancel-button {
+border: 1px solid #d9e4e7;
+background: #ffffff;
+color: #52696d;
+}
+
+.customer-my-requests .complaint-cancel-button:hover {
+background: #f3f7f7;
+}
+
+.customer-my-requests .complaint-submit-button {
+border: 1px solid #087f82;
+background: #0f8b8d;
+color: #ffffff;
+}
+
+.customer-my-requests .complaint-submit-button:hover {
+border-color: #086f72;
+background: #08787b;
+}
+
+.customer-my-requests .complaint-modal-actions button:disabled {
+opacity: 0.6;
+cursor: not-allowed;
+}
+
+/* ==========================================
+TABLET
+========================================== */
+
+@media (max-width: 768px) {
+.customer-my-requests .requests-section-heading {
+align-items: flex-start;
+flex-direction: column;
+gap: 16px;
+}
+
+.customer-my-requests .my-requests-controls {
+width: 100%;
+justify-content: flex-start;
+}
+
+.customer-my-requests .request-card-top {
+flex-wrap: wrap;
+}
+
+.customer-my-requests .request-card-bottom {
+align-items: flex-start;
+flex-direction: column;
+gap: 14px;
+}
+
+.customer-my-requests .request-action-buttons {
+width: 100%;
+justify-content: flex-start;
+}
+}
+
+/* ==========================================
+MOBILE
+========================================== */
+
+@media (max-width: 480px) {
+.customer-my-requests .my-requests-controls {
+align-items: stretch;
+flex-direction: column;
+}
+
+.customer-my-requests .my-requests-filter,
+.customer-my-requests .refresh-requests-button {
+width: 100%;
+}
+
+.customer-my-requests .request-action-buttons {
+align-items: stretch;
+flex-direction: column;
+width: 100%;
+}
+
+.customer-my-requests .request-action-buttons button {
+width: 100%;
+}
+
+.customer-my-requests .complaint-modal-overlay {
+align-items: center;
+padding: 12px;
+}
+
+.customer-my-requests .complaint-modal {
+max-height: calc(100vh - 24px);
+padding: 20px;
+border-radius: 14px;
+}
+
+.customer-my-requests .complaint-modal-header h2 {
+font-size: 21px;
+}
+
+.customer-my-requests .complaint-modal-actions {
+flex-direction: column-reverse;
+}
+
+.customer-my-requests .complaint-modal-actions button {
+width: 100%;
+}
+}
+
+/* Respect reduced-motion preferences */
+
+@media (prefers-reduced-motion: reduce) {
+.customer-my-requests .complaint-modal {
+animation: none;
+}
+
+.customer-my-requests * {
+scroll-behavior: auto;
+}
+}
+
+
+
+
+
+
+
+/* ==========================================
+   WRITE REVIEW BUTTON
+========================================== */
+
+.customer-my-requests .review-request-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 10px 15px;
+  border: 1px solid #e6c76a;
+  border-radius: 9px;
+  background: #fff8e5;
+  color: #88620b;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.customer-my-requests .review-request-button:hover:not(:disabled) {
+  background: #ffefc2;
+  border-color: #d7a72b;
+}
+
+.customer-my-requests .review-request-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* ==========================================
+   REVIEW MODAL
+========================================== */
+
+.customer-my-requests .review-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+  background: rgba(14, 31, 35, 0.62);
+  backdrop-filter: blur(4px);
+}
+
+.customer-my-requests .review-modal {
+  width: 100%;
+  max-width: 560px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  padding: 28px;
+  border: 1px solid #e1eaec;
+  border-radius: 18px;
+  background: #fff;
+  color: #263b40;
+  box-shadow: 0 20px 60px rgba(14, 42, 47, 0.22);
+  animation: reviewModalIn 0.2s ease-out;
+}
+
+@keyframes reviewModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.99);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.customer-my-requests .review-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e8eff0;
+}
+
+.customer-my-requests .review-modal-header > div {
+  min-width: 0;
+  flex: 1;
+}
+
+.customer-my-requests .review-modal-header h2 {
+  margin: 8px 0 12px;
+  color: #173d43;
+  font-size: 24px;
+  line-height: 1.3;
+}
+
+.customer-my-requests .review-modal-header p {
+  margin: 5px 0;
+  color: #62777b;
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.customer-my-requests .review-modal-header strong {
+  color: #26494e;
+}
+
+.customer-my-requests .review-modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border: 1px solid #e0e9ea;
+  border-radius: 10px;
+  background: #f6f9f9;
+  color: #456267;
+  cursor: pointer;
+}
+
+.customer-my-requests .review-modal-close:hover {
+  background: #eaf3f3;
+  color: #0f777a;
+}
+
+.customer-my-requests .review-modal-close:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.customer-my-requests .review-modal form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.customer-my-requests .review-modal form label {
+  margin-top: 8px;
+  color: #28484d;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.customer-my-requests .review-modal form textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 130px;
+  padding: 12px 14px;
+  border: 1px solid #d9e4e7;
+  border-radius: 9px;
+  background: #fff;
+  color: #263b40;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+}
+
+.customer-my-requests .review-modal form textarea:focus {
+  border-color: #0f8b8d;
+  box-shadow: 0 0 0 3px rgba(15, 139, 141, 0.12);
+}
+
+.customer-my-requests .review-modal form textarea::placeholder {
+  color: #91a3a6;
+}
+
+/* Star rating */
+
+.customer-my-requests .review-star-rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 0;
+}
+
+.customer-my-requests .review-star-rating button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 43px;
+  height: 43px;
+  padding: 0;
+  border: 1px solid #e1e8e9;
+  border-radius: 10px;
+  background: #f8fafa;
+  color: #c5cdce;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.customer-my-requests .review-star-rating button.star-active {
+  border-color: #e6c76a;
+  background: #fff8e5;
+  color: #e4a817;
+}
+
+.customer-my-requests .review-star-rating button:hover {
+  transform: translateY(-1px);
+}
+
+.customer-my-requests .review-star-rating button:focus-visible {
+  outline: 3px solid rgba(15, 139, 141, 0.25);
+  outline-offset: 2px;
+}
+
+.customer-my-requests .review-rating-hint {
+  color: #74888b;
+  font-size: 12px;
+}
+
+/* Modal buttons */
+
+.customer-my-requests .review-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.customer-my-requests .review-modal-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 43px;
+  padding: 11px 18px;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.customer-my-requests .review-cancel-button {
+  border: 1px solid #d9e4e7;
+  background: #fff;
+  color: #52696d;
+}
+
+.customer-my-requests .review-cancel-button:hover {
+  background: #f3f7f7;
+}
+
+.customer-my-requests .review-submit-button {
+  border: 1px solid #087f82;
+  background: #0f8b8d;
+  color: #fff;
+}
+
+.customer-my-requests .review-submit-button:hover:not(:disabled) {
+  border-color: #086f72;
+  background: #08787b;
+}
+
+.customer-my-requests .review-modal-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Mobile */
+
+@media (max-width: 480px) {
+  .customer-my-requests .review-modal-overlay {
+    padding: 12px;
+  }
+
+  .customer-my-requests .review-modal {
+    max-height: calc(100vh - 24px);
+    padding: 20px;
+    border-radius: 14px;
+  }
+
+  .customer-my-requests .review-modal-header h2 {
+    font-size: 21px;
+  }
+
+  .customer-my-requests .review-star-rating {
+    gap: 5px;
+  }
+
+  .customer-my-requests .review-star-rating button {
+    width: 40px;
+    height: 40px;
+    font-size: 25px;
+  }
+
+  .customer-my-requests .review-modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .customer-my-requests .review-modal-actions button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .customer-my-requests .review-modal {
+    animation: none;
+  }
+}
