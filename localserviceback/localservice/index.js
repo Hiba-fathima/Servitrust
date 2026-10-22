@@ -13,11 +13,15 @@ const Complaint = require("./models/ComplaintModel");
 const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
 const Notification = require("./models/NotificationModel");
+const Review = require("./models/ReviewModel");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+const reviewRoutes = require("./routes/reviewRoutes.js");
+
+app.use("/reviews", reviewRoutes);
 
 // mongoose
 //   .connect(process.env.MONGO_URI)
@@ -2962,6 +2966,161 @@ app.patch(
     }
   }
 );
+
+
+// ADMIN: SEND A COMPLAINT TO ITS ASSIGNED PROVIDER
+app.put("/complaints/:id/send-to-provider", async (req, res) => {
+  try {
+    const complaint = await Complaint.findById(req.params.id);
+
+    if (!complaint) {
+      return res.status(404).json({
+        message: "Complaint not found.",
+      });
+    }
+
+    if (!complaint.provider) {
+      return res.status(400).json({
+        message: "This complaint is not linked to a provider.",
+      });
+    }
+
+    if (complaint.assignedToProvider) {
+      return res.status(400).json({
+        message: "This complaint has already been sent to the provider.",
+      });
+    }
+
+    complaint.assignedToProvider = true;
+    complaint.sentToProviderAt = new Date();
+
+    await complaint.save();
+
+    const updatedComplaint = await Complaint.findById(complaint._id)
+      .populate("customer", "name email phone")
+      .populate({
+        path: "provider",
+        populate: {
+          path: "userId",
+          select: "name email phone",
+        },
+      });
+
+    return res.status(200).json({
+      message: "Complaint sent to provider successfully.",
+      complaint: updatedComplaint,
+    });
+  } catch (error) {
+    console.error("SEND COMPLAINT TO PROVIDER ERROR:", error);
+
+    return res.status(500).json({
+      message: "Unable to send complaint to provider.",
+    });
+  }
+});
+
+
+// GET COMPLAINTS SENT TO A PROVIDER
+app.get("/providers/:providerId/complaints", async (req, res) => {
+  try {
+    const { providerId } = req.params;
+
+    if (!mongoose.isValidObjectId(providerId)) {
+      return res.status(400).json({
+        message: "Invalid provider ID.",
+      });
+    }
+
+    const complaints = await Complaint.find({
+      provider: providerId,
+      assignedToProvider: true,
+    })
+      .populate("customer", "name email phone")
+      .populate({
+        path: "provider",
+        populate: {
+          path: "userId",
+          select: "name email phone",
+        },
+      })
+      .sort({ sentToProviderAt: -1 });
+
+    return res.status(200).json(complaints);
+  } catch (error) {
+    console.error("GET PROVIDER COMPLAINTS ERROR:", error);
+
+    return res.status(500).json({
+      message: "Unable to load provider complaints.",
+    });
+  }
+});
+
+
+// PROVIDER RESPONDS TO A COMPLAINT
+app.put(
+  "/providers/:providerId/complaints/:complaintId/response",
+  async (req, res) => {
+    try {
+      const { providerId, complaintId } = req.params;
+      const { providerResponse } = req.body;
+
+      if (
+        !mongoose.isValidObjectId(providerId) ||
+        !mongoose.isValidObjectId(complaintId)
+      ) {
+        return res.status(400).json({
+          message: "Invalid provider or complaint ID.",
+        });
+      }
+
+      if (
+        typeof providerResponse !== "string" ||
+        !providerResponse.trim()
+      ) {
+        return res.status(400).json({
+          message: "Please enter a response.",
+        });
+      }
+
+      const complaint = await Complaint.findOne({
+        _id: complaintId,
+        provider: providerId,
+        assignedToProvider: true,
+      });
+
+      if (!complaint) {
+        return res.status(404).json({
+          message: "Assigned complaint not found.",
+        });
+      }
+
+      complaint.providerResponse = providerResponse.trim();
+      complaint.providerRespondedAt = new Date();
+
+      await complaint.save();
+
+      return res.status(200).json({
+        message: "Response submitted successfully.",
+        complaint,
+      });
+    } catch (error) {
+      console.error("PROVIDER COMPLAINT RESPONSE ERROR:", error);
+
+      return res.status(500).json({
+        message: "Unable to submit response.",
+      });
+    }
+  }
+);
+
+
+
+
+
+
+
+
+
 
 
 

@@ -59,9 +59,32 @@ const complaintSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+
+    assignedToProvider: {
+  type: Boolean,
+  default: false,
+},
+
+sentToProviderAt: {
+  type: Date,
+  default: null,
+},
+
+providerResponse: {
+  type: String,
+  default: "",
+},
+
+providerRespondedAt: {
+  type: Date,
+  default: null,
+},
+    
   },
   { timestamps: true }
 );
+
+
 
 
 complaintSchema.pre("validate", function () {
