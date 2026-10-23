@@ -5,6 +5,9 @@ const mongoose = require("mongoose");
 const Review = require("../models/ReviewModel");
 const ServiceRequest = require("../models/RequestModel");
 const Provider = require("../models/ProviderModel");
+console.log("Registered Provider model:", Provider.modelName);
+console.log("Registered models:", mongoose.modelNames());
+console.log("Provider model name:", Provider.modelName);
 
 // Register the models used by populate().
 // This avoids "Schema hasn't been registered" errors.
