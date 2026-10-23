@@ -2128,19 +2128,34 @@ app.patch(
 );
 
 
+
+
+
+
+
+
+
+
+// GET ALL COMPLAINTS FOR ADMIN
 app.get("/complaints", async (req, res) => {
   try {
     const complaints = await Complaint.find()
-      .populate("customer", "name email")
+      .populate("customer", "name email phone")
+      .populate({
+        path: "provider",
+        populate: {
+          path: "userId",
+          select: "name email phone",
+        },
+      })
       .sort({ createdAt: -1 });
 
-    res.status(200).json(complaints);
+    return res.status(200).json(complaints);
   } catch (error) {
-    console.error("FETCH COMPLAINTS ERROR:", error);
+    console.error("GET ALL COMPLAINTS ERROR:", error);
 
-    res.status(500).json({
-      message: "Failed to fetch complaints",
-      error: error.message,
+    return res.status(500).json({
+      message: "Unable to load complaints.",
     });
   }
 });
