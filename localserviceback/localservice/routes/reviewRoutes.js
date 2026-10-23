@@ -1,30 +1,36 @@
 const express = require("express");
 const router = express.Router();
-
 const mongoose = require("mongoose");
+
 const Review = require("../models/ReviewModel");
 const ServiceRequest = require("../models/RequestModel");
 const Provider = require("../models/ProviderModel");
+
+// Register the models used by populate().
+// This avoids "Schema hasn't been registered" errors.
+require("../models/UserModel");
+require("../models/ServiceModel");
 
 // GET ALL REVIEWS
 router.get("/", async (req, res) => {
   try {
     const reviews = await Review.find()
-      .populate("customer", "name")
-      .populate("providers")
-      .populate("services")
+      .populate("customer", "name email")
+      .populate("provider", "name category location")
+      .populate("service", "name category")
       .sort({ createdAt: -1 });
 
-    res.json({
+    return res.status(200).json({
       success: true,
       reviews,
     });
   } catch (error) {
     console.error("GET REVIEWS ERROR:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: "Failed to fetch reviews",
+      message: "Failed to fetch reviews.",
+      error: error.message,
     });
   }
 });
@@ -46,7 +52,8 @@ router.post("/", async (req, res) => {
       !serviceRequestId ||
       !customer ||
       !provider ||
-      !rating ||
+      rating === undefined ||
+      rating === null ||
       !comment?.trim()
     ) {
       return res.status(400).json({
@@ -59,23 +66,36 @@ router.post("/", async (req, res) => {
     if (
       !mongoose.isValidObjectId(serviceRequestId) ||
       !mongoose.isValidObjectId(customer) ||
-      !mongoose.isValidObjectId(provider)
+      !mongoose.isValidObjectId(provider) ||
+      (service && !mongoose.isValidObjectId(service))
     ) {
       return res.status(400).json({
         success: false,
-        message: "Invalid review ID.",
+        message: "One or more review IDs are invalid.",
       });
     }
 
     // Validate rating
+    const numericRating = Number(rating);
+
     if (
-      !Number.isInteger(Number(rating)) ||
-      Number(rating) < 1 ||
-      Number(rating) > 5
+      !Number.isInteger(numericRating) ||
+      numericRating < 1 ||
+      numericRating > 5
     ) {
       return res.status(400).json({
         success: false,
-        message: "Rating must be between 1 and 5.",
+        message: "Rating must be an integer between 1 and 5.",
+      });
+    }
+
+    // Validate comment length
+    const trimmedComment = comment.trim();
+
+    if (trimmedComment.length < 5 || trimmedComment.length > 2000) {
+      return res.status(400).json({
+        success: false,
+        message: "Comment must contain between 5 and 2000 characters.",
       });
     }
 
@@ -89,7 +109,7 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // Check whether the request belongs to this customer
+    // Verify the customer owns this request
     if (String(request.customerId) !== String(customer)) {
       return res.status(403).json({
         success: false,
@@ -97,7 +117,7 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // Check whether the provider matches the request
+    // Verify the provider matches this request
     if (String(request.providerId) !== String(provider)) {
       return res.status(400).json({
         success: false,
@@ -105,10 +125,7 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // Allow reviews for service requests of ANY status.
-    // The completed-only restriction has been removed.
-
-    // Prevent duplicate reviews for the same request
+    // Prevent duplicate reviews
     const existingReview = await Review.findOne({
       serviceRequestId,
     });
@@ -125,30 +142,27 @@ router.post("/", async (req, res) => {
       serviceRequestId,
       customer,
       provider,
-      service: service || undefined,
-      rating: Number(rating),
-      comment: comment.trim(),
+      ...(service ? { service } : {}),
+      rating: numericRating,
+      comment: trimmedComment,
     });
 
-    // Update the provider's average rating
-    const providerReviews = await Review.find({
-      provider,
-    });
+    // Update provider average rating
+    const providerReviews = await Review.find({ provider });
 
     const averageRating =
-      providerReviews.reduce(
-        (sum, item) => sum + item.rating,
-        0
-      ) / providerReviews.length;
+      providerReviews.reduce((sum, item) => sum + item.rating, 0) /
+      providerReviews.length;
 
     await Provider.findByIdAndUpdate(provider, {
       averageRating: Number(averageRating.toFixed(1)),
     });
 
-    // Return the newly created review
+    // Return the populated review
     const populatedReview = await Review.findById(review._id)
-      .populate("customer", "name")
-      .populate("service");
+      .populate("customer", "name email")
+      .populate("provider", "name category location")
+      .populate("service", "name category");
 
     return res.status(201).json({
       success: true,
@@ -157,6 +171,14 @@ router.post("/", async (req, res) => {
     });
   } catch (error) {
     console.error("SUBMIT REVIEW ERROR:", error);
+
+    // Handle duplicate-key errors
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "You have already reviewed this service.",
+      });
+    }
 
     return res.status(500).json({
       success: false,
@@ -178,22 +200,18 @@ router.get("/provider/:providerId", async (req, res) => {
       });
     }
 
-    const reviews = await Review.find({
-      provider: providerId,
-    })
+    const reviews = await Review.find({ provider: providerId })
       .populate("customer", "name")
-      .populate("service")
+      .populate("service", "name category")
       .sort({ createdAt: -1 });
 
     const averageRating =
       reviews.length > 0
-        ? reviews.reduce(
-            (sum, item) => sum + item.rating,
-            0
-          ) / reviews.length
+        ? reviews.reduce((sum, item) => sum + item.rating, 0) /
+          reviews.length
         : 0;
 
-    res.json({
+    return res.status(200).json({
       success: true,
       reviews,
       averageRating: Number(averageRating.toFixed(1)),
@@ -202,9 +220,10 @@ router.get("/provider/:providerId", async (req, res) => {
   } catch (error) {
     console.error("GET PROVIDER REVIEWS ERROR:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Failed to fetch provider reviews.",
+      error: error.message,
     });
   }
 });
@@ -214,7 +233,7 @@ router.get("/customer/:customerId", async (req, res) => {
   try {
     const { customerId } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(customerId)) {
+    if (!mongoose.isValidObjectId(customerId)) {
       return res.status(400).json({
         success: false,
         message: "Invalid customer ID.",
@@ -222,8 +241,9 @@ router.get("/customer/:customerId", async (req, res) => {
     }
 
     const reviews = await Review.find({ customer: customerId })
-      .populate("service", "name serviceName")
-      .populate("provider", "name businessName")
+      .populate("customer", "name")
+      .populate("provider", "name category location")
+      .populate("service", "name category")
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
@@ -231,7 +251,7 @@ router.get("/customer/:customerId", async (req, res) => {
       reviews,
     });
   } catch (error) {
-    console.error("Error fetching customer reviews:", error);
+    console.error("GET CUSTOMER REVIEWS ERROR:", error);
 
     return res.status(500).json({
       success: false,
@@ -240,9 +260,5 @@ router.get("/customer/:customerId", async (req, res) => {
     });
   }
 });
-
-
-
-
 
 module.exports = router;

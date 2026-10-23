@@ -4,7 +4,7 @@ const reviewSchema = new mongoose.Schema(
   {
     serviceRequestId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "ServiceRequest",
+      ref: "serviceRequests",
       required: true,
       unique: true,
     },
@@ -17,13 +17,13 @@ const reviewSchema = new mongoose.Schema(
 
     provider: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Provider",
+      ref: "providers",
       required: true,
     },
 
     service: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Service",
+      ref: "services",
     },
 
     rating: {
