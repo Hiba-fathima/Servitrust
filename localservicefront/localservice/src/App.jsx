@@ -23,6 +23,7 @@ import ProviderServices from './pages/ProvideServices'
 import MyComplaints from './pages/MyComplaints'
 import CustomerRequests from './pages/CustomerRequest'
 import ProviderComplaints from './pages/ProviderComplaint'
+import CustomerMyReviews from './pages/CustomerMyReviews'
 // import ProviderReviews from './pages/PRoviderReviews'
 
 function App() {
@@ -106,6 +107,10 @@ function App() {
  <Route
   path="/customer/complaints"
   element={<MyComplaints />}
+/>
+ <Route
+  path="/customer/reviews"
+  element={<CustomerMyReviews />}
 />
 
 
