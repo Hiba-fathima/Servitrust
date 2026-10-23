@@ -11,8 +11,8 @@ router.get("/", async (req, res) => {
   try {
     const reviews = await Review.find()
       .populate("customer", "name")
-      .populate("provider")
-      .populate("service")
+      .populate("providers")
+      .populate("services")
       .sort({ createdAt: -1 });
 
     res.json({
