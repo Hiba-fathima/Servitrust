@@ -79,6 +79,11 @@ providerRespondedAt: {
   type: Date,
   default: null,
 },
+serviceRequestId: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "serviceRequests",
+  default: null,
+},
     
   },
   { timestamps: true }

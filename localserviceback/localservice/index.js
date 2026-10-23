@@ -2160,33 +2160,35 @@ app.get("/complaints", async (req, res) => {
   }
 });
 
-
-
-
-
-
 // CREATE COMPLAINT
+// CREATE COMPLAINT AND LINK IT TO THE CORRECT PROVIDER
 app.post("/complaints", verifyToken, async (req, res) => {
   try {
     const {
-      provider,
       bookingId,
       category,
       subject,
       description,
     } = req.body;
 
-    // Only logged-in customers can submit complaints.
+    // Only customers can submit complaints.
     if (req.userRole !== "customer") {
       return res.status(403).json({
         message: "Only customers can submit complaints.",
       });
     }
 
-    // Use the customer ID from the verified token.
-    const customer = req.userId;
+    const customerId = req.userId;
 
-    // Validate required fields.
+    const allowedCategories = [
+      "Service Quality",
+      "Provider Behaviour",
+      "Incomplete Service",
+      "Payment Issue",
+      "Booking Issue",
+      "Other",
+    ];
+
     if (
       !category ||
       !subject?.trim() ||
@@ -2197,45 +2199,48 @@ app.post("/complaints", verifyToken, async (req, res) => {
       });
     }
 
-    // Match the category values in ComplaintModel.
-    const allowedCategories = [
-      "Service Quality",
-      "Provider Behaviour",
-      "Incomplete Service",
-      "Payment Issue",
-      "Booking Issue",
-      "Other",
-    ];
-
     if (!allowedCategories.includes(category)) {
       return res.status(400).json({
         message: "Invalid complaint category.",
       });
     }
 
-    // Validate customer ID.
-    if (!mongoose.isValidObjectId(customer)) {
+    if (!mongoose.isValidObjectId(customerId)) {
       return res.status(400).json({
         message: "Invalid customer ID.",
       });
     }
 
-    // Validate provider ID, if supplied.
-    if (provider && !mongoose.isValidObjectId(provider)) {
+    // A booking is required to identify its assigned provider.
+    if (!bookingId || !mongoose.isValidObjectId(bookingId)) {
       return res.status(400).json({
-        message: "Invalid provider ID.",
+        message: "Please select a valid service request.",
       });
     }
 
-    // Validate the service request ID, if supplied.
-    if (bookingId && !mongoose.isValidObjectId(bookingId)) {
-      return res.status(400).json({
-        message: "Invalid service request ID.",
+    const serviceRequest = await ServiceRequest.findById(bookingId);
+
+    if (!serviceRequest) {
+      return res.status(404).json({
+        message: "Service request not found.",
       });
     }
 
-    // Confirm that the customer exists.
-    const customerExists = await User.findById(customer);
+    // Verify booking ownership.
+    if (String(serviceRequest.customerId) !== String(customerId)) {
+      return res.status(403).json({
+        message: "You cannot complain about another customer's request.",
+      });
+    }
+
+    if (!serviceRequest.providerId) {
+      return res.status(400).json({
+        message: "No provider is assigned to this service request.",
+      });
+    }
+
+    // Verify the customer exists.
+    const customerExists = await User.findById(customerId);
 
     if (!customerExists) {
       return res.status(404).json({
@@ -2243,71 +2248,49 @@ app.post("/complaints", verifyToken, async (req, res) => {
       });
     }
 
-    // If a service request ID is supplied, verify ownership.
-    let serviceRequest = null;
+    // Verify the provider document exists.
+    const providerExists = await Provider.findById(
+      serviceRequest.providerId
+    );
 
-    if (bookingId) {
-      serviceRequest = await ServiceRequest.findById(bookingId);
-
-      if (!serviceRequest) {
-        return res.status(404).json({
-          message: "Service request not found.",
-        });
-      }
-
-      if (
-        String(serviceRequest.customerId) !== String(customer)
-      ) {
-        return res.status(403).json({
-          message: "You cannot complain about another customer's request.",
-        });
-      }
-    }
-
-    // Verify that the provider belongs to this service request.
-    if (
-      provider &&
-      serviceRequest &&
-      String(serviceRequest.providerId) !== String(provider)
-    ) {
-      return res.status(400).json({
-        message: "The provider does not match this service request.",
+    if (!providerExists) {
+      return res.status(404).json({
+        message: "The assigned provider could not be found.",
       });
     }
 
     const complaint = await Complaint.create({
-      customer,
-      provider: provider || serviceRequest?.providerId || null,
+      customer: customerId,
+      provider: serviceRequest.providerId,
+      serviceRequestId: serviceRequest._id,
       category,
       subject: subject.trim(),
       description: description.trim(),
     });
 
-    // Return the saved complaint with customer and provider information.
     const savedComplaint = await Complaint.findById(complaint._id)
       .populate("customer", "name email phone")
-      .populate("provider");
+      .populate({
+        path: "provider",
+        populate: {
+          path: "userId",
+          select: "name email phone",
+        },
+      });
 
     return res.status(201).json({
       message: "Complaint submitted successfully.",
       complaint: {
         ...savedComplaint.toObject(),
-        serviceName: serviceRequest?.serviceName || "",
-        bookingId: serviceRequest?._id || null,
+        serviceName: serviceRequest.serviceName,
+        bookingId: serviceRequest._id,
       },
     });
   } catch (error) {
     console.error("CREATE COMPLAINT ERROR:", error);
 
-    if (error.name === "ValidationError") {
-      return res.status(400).json({
-        message: error.message,
-      });
-    }
-
     return res.status(500).json({
       message: "Failed to submit complaint.",
-      error: error.message,
     });
   }
 });
