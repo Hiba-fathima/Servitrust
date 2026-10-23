@@ -214,33 +214,35 @@ router.get("/customer/:customerId", async (req, res) => {
   try {
     const { customerId } = req.params;
 
-    if (!mongoose.isValidObjectId(customerId)) {
+    if (!mongoose.Types.ObjectId.isValid(customerId)) {
       return res.status(400).json({
         success: false,
         message: "Invalid customer ID.",
       });
     }
 
-    const reviews = await Review.find({
-      customer: customerId,
-    })
-      .populate("provider", "userId averageRating")
-      .populate("service", "name")
+    const reviews = await Review.find({ customer: customerId })
+      .populate("service", "name serviceName")
+      .populate("provider", "name businessName")
       .sort({ createdAt: -1 });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      totalReviews: reviews.length,
       reviews,
     });
   } catch (error) {
-    console.error("FETCH CUSTOMER REVIEWS ERROR:", error);
+    console.error("Error fetching customer reviews:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Failed to fetch customer reviews.",
+      error: error.message,
     });
   }
 });
+
+
+
+
 
 module.exports = router;
